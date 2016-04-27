@@ -1,0 +1,8 @@
+SmallRadius: 1.5
+WideRadius: 3.5
+Weight: 0.05
+Threshold: 5
+FixThrFlag: 1
+RawDataFlg: 0
+FullFrame: 0
+pedsub: 0

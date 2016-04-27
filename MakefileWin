@@ -1,0 +1,41 @@
+include Makefile.arch
+#------------------------------------------------------------------------------
+
+OBJS = TPixy.$(ObjSuf) TMainGUI_new_v2.$(ObjSuf) TInputFile.$(ObjSuf) \
+	TEventDisplay_new_v3.$(ObjSuf) THexagonCol.$(ObjSuf) \
+	TDetector_new_v2.$(ObjSuf) TCluster_hex.$(ObjSuf) TEditor.$(ObjSuf) PixiDict.$(ObjSuf)
+
+PIXY = Pixy$(ExeSuf)
+
+CINT_HDRS = TInputFile.h TMainGUI_new_v2.h TEventDisplay_new_v3.h THexagonCol.h TDetector_new_v2.h TCluster_hex.h TEditor.h
+
+#------------------------------------------------------------------------------
+.SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
+
+
+$(PIXY):	$(OBJS)
+		$(LD) $(LDFLAGS) $^ $(GLIBS) $(OutPutOpt)$@
+		$(MT_EXE)
+		@echo "$@ done"
+		@echo  $(VC)  "ARCH: " $(ARCH) " PLATFORM: " $(PLATFORM)
+
+clean:
+	@rm -f $(OBJS) *Dict.* core *.exe *.exp *.lib
+
+.SUFFIXES: .$(SrcSuf)
+
+.$(SrcSuf).$(ObjSuf):
+	$(CXX) $(CXXFLAGS) -c $<
+
+
+TMainGUI_new_v2.$(ObjSuf):TMainGUI_new_v2.h
+PixiDict.$(SrcSuf): TMainGUI_new_v2.h PixiLinkDef.h
+		@echo "Generating dictionary Dict..."
+		rootcint -f $@ -c $^
+
+
+
+
+
+
+

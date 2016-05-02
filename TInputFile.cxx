@@ -1,38 +1,32 @@
 #include "TInputFile.h"
 
-//ClassImp(TTInputFile)
-
 /************************************************************************
  * TInputFile::TInputFile - Constructor: open file.                     *
  ************************************************************************/
-TInputFile::TInputFile( Text_t *fName, UShort_t fType) {
- 
+TInputFile::TInputFile( TString fName, UShort_t fType) {
     fFileName = fName;  // Initilise class data member from parameter.
-    // Method of opening file depends on file type (Ascii or binary).
-    if ( fType == kAscii ) fStream.open( fFileName, ios::in );
-    else fStream.open( fFileName, ios::in | ios::binary );
+    if ( fType == kAscii ) fStream.open(fFileName, ios::in);
+    else fStream.open(fFileName, ios::in | ios::binary);
     // Check if there were problems with the open.
     fErr = fStream.bad();
-    if ( fErr ) {
+    if (fErr) {
 	cout << "Could not open file " << fFileName << " Exit " << fErr << endl;
-	exit ( fErr );
+	exit (fErr);
     }
-    //    cout << "\nOpened file " << fFileName << endl;
 }
 
 /************************************************************************
  * TInputFile::~TInputFile - Destructor: close file.                    *
  ************************************************************************/
-TInputFile::~TInputFile() {
-    
+TInputFile::~TInputFile() {    
     fStream.close();
     // Check if there were problems with the close.
     fErr = fStream.bad();
-    if ( fErr ) {
+    if (fErr) {
 	cout << "Problem closing file " << fFileName << " Exit " << fErr << endl;
-	exit ( fErr );
+	exit (fErr);
     }
-    cout << "\nClosed file " << fFileName << endl;
+    cout << "Closed file " << fFileName << endl;
 }
 
 /************************************************************************
@@ -45,7 +39,7 @@ void TInputFile::CheckRead( ULong_t fExpected )
   if ( (ULong_t)fStream.gcount() != fExpected ) 
     {
       cout << "Could not read all of data from file " << fFileName <<  " Exit" << endl;
-      exit ( 1 );
+      exit (1);
     }
 }
 

@@ -1,5 +1,5 @@
 #include "TPixy.h"
-#include "TMainGUI_new_v2.h"
+#include "TMainGUI.h"
 
 TMainGUI *theGUI;
 //TRint *theApp;

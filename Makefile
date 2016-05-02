@@ -17,8 +17,8 @@ GLIBS         = $(ROOTGLIBS)
 
 #-----------------------------------------------------------------------------------------------
 
-OBJS = TPixy.o TMainGUI_new_v2.o TInputFile.o TEventDisplay_new_v3.o THexagonCol.o TDetector_new_v2.o TCluster_hex.o TEditor.o PixiDict.o
-CINT_HDRS = TInputFile.h TMainGUI_new_v2.h TEventDisplay_new_v3.h THexagonCol.h TDetector_new_v2.h TCluster_hex.h TEditor.h PixiLinDef.h
+OBJS = TPixy.o TMainGUI.o TInputFile.o TEventDisplay.o THexagonCol.o TDetector.o TCluster_hex.o TEditor.o PixiDict.o
+CINT_HDRS = TInputFile.h TMainGUI.h TEventDisplay.h THexagonCol.h TDetector.h TCluster_hex.h TEditor.h PixiLinDef.h
 
  PROGRAMS = Pixy
 
@@ -35,8 +35,8 @@ clean:
 	$(CXX) $(CXXFLAGS) -c $<
 
 
-TMainGUI_new_v2.o:TMainGUI_new_v2.h
-PixiDict.cxx: TMainGUI_new_v2.h PixiLinkDef.h
+TMainGUI.o:TMainGUI.h
+PixiDict.cxx: TMainGUI.h PixiLinkDef.h
 		@echo "Generating dictionary Dict..."
 		rootcint -f $@ -c $^
 

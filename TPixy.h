@@ -8,6 +8,7 @@
 #include <time.h>
 #include <string>
 #include "Riostream.h"
+using namespace std;
 
 // Root Stuff.
 #include <TROOT.h>
@@ -103,8 +104,8 @@ typedef Float_t MatrixFloat_t[PIX_X_DIM] [PIX_Y_DIM];
 typedef Int_t MatrixInt_t[PIX_X_DIM][PIX_Y_DIM];
 typedef UShort_t MatrixUshort_t[PIX_X_DIM][PIX_Y_DIM];
 
-enum {HEADON, PEDSUB, PRINT, WEXIT, SEL_EV, SLIDER_EV,   
+enum {HEADON, FILE_OPEN, WEXIT, SEL_EV, SLIDER_EV,   
       OR, AND, ABOUT, UPDATEPED, UPDATEDATA,
-      CHKRAW, WLEN, THFIX, BLUE, RED, NUMEV};
+      CHKRAW, WLEN, BLUE, RED, NUMEV};
 
 #endif

@@ -1,13 +1,13 @@
 include Makefile.arch
 #------------------------------------------------------------------------------
 
-OBJS = TPixy.$(ObjSuf) TMainGUI_new_v2.$(ObjSuf) TInputFile.$(ObjSuf) \
-	TEventDisplay_new_v3.$(ObjSuf) THexagonCol.$(ObjSuf) \
-	TDetector_new_v2.$(ObjSuf) TCluster_hex.$(ObjSuf) TEditor.$(ObjSuf) PixiDict.$(ObjSuf)
+OBJS = TPixy.$(ObjSuf) TMainGUI.$(ObjSuf) TInputFile.$(ObjSuf) \
+	TEventDisplay.$(ObjSuf) THexagonCol.$(ObjSuf) \
+	TDetector.$(ObjSuf) TCluster_hex.$(ObjSuf) TEditor.$(ObjSuf) PixiDict.$(ObjSuf)
 
 PIXY = Pixy$(ExeSuf)
 
-CINT_HDRS = TInputFile.h TMainGUI_new_v2.h TEventDisplay_new_v3.h THexagonCol.h TDetector_new_v2.h TCluster_hex.h TEditor.h
+CINT_HDRS = TInputFile.h TMainGUI.h TEventDisplay.h THexagonCol.h TDetector.h TCluster_hex.h TEditor.h
 
 #------------------------------------------------------------------------------
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
@@ -28,8 +28,8 @@ clean:
 	$(CXX) $(CXXFLAGS) -c $<
 
 
-TMainGUI_new_v2.$(ObjSuf):TMainGUI_new_v2.h
-PixiDict.$(SrcSuf): TMainGUI_new_v2.h PixiLinkDef.h
+TMainGUI.$(ObjSuf):TMainGUI.h
+PixiDict.$(SrcSuf): TMainGUI.h PixiLinkDef.h
 		@echo "Generating dictionary Dict..."
 		rootcint -f $@ -c $^
 

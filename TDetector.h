@@ -25,6 +25,8 @@ class TDetector {
   Float_t Energy, PolDegree, Delta, Epsilon, X1, Y1, Z1;
   Int_t Counts, VersNum;
   Char_t Mixture[1000];
+  int roll;
+  vector <UShort_t> tm;
 
  public:
 
@@ -39,7 +41,7 @@ class TDetector {
   Int_t Roi[4], numPix;    
   Float_t thr;
   UShort_t time1, time2;
-  Double_t timestamp;
+  ULong64_t timestamp;
   Int_t bufferID;
   MatrixFloat_t PixToCartX;
   MatrixFloat_t PixToCartY;
@@ -55,6 +57,7 @@ class TDetector {
   Bool_t HeaderInFile;
   TCluster *fAllClusts[MAXNUMCLUSTS];
 
+ 
   TDetector(TInputFile*, TInputFile*);
   TDetector(TTree *,TInputFile*);
   void CreatePixLookup();

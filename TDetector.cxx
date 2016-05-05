@@ -26,6 +26,8 @@ TDetector::TDetector(TInputFile *fPix, TInputFile *fRaw){
   // Reset the cumulative Hitmap
   for (Int_t i=0; i<NCHANS; i++) fCumulativeHitmap[i] = 0;
   MCflag = 0;
+  roll = 0;
+  tm.clear();
   }
 
 
@@ -161,8 +163,18 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
   fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
   fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
   time2 = COMB(tmp1,tmp2);
-  timestamp = (Double_t)(time1 + time2*65534)*0.8; //in microsec
- 
+
+  tm.push_back(time2);
+
+  if(numEv>=2){
+    if((tm[numEv-1]-tm[numEv-2])<0){
+      roll++;
+    }
+  }
+  
+  //timestamp = (Double_t)(time1 + time2*65534)*0.8; //in microsec
+  timestamp = (ULong64_t)time1 + (ULong64_t)time2*65534 + (ULong64_t)roll*TMath::Power(2.,32);
+  
   // 4 Dummy read 
   for (int j=0; j<4; j++)fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
 

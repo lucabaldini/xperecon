@@ -607,7 +607,7 @@ void TMainGUI::SaveClusters(Int_t NbClusters, Int_t nev){
   fEventId   = nev;
   fNClusters = NbClusters;
   fTrigWindow = Polarimeter->numPix;
-  fTimeStamp = Polarimeter->timestamp;
+  fTimeStamp =  (Double_t)Polarimeter->timestamp;
   fbufferId = Polarimeter->bufferID;
   for (Int_t i=0; i<NbClusters; i++){
     fPHeight[i]            = Polarimeter->fAllClusts[i]->fPulseHeight;

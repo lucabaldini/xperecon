@@ -524,6 +524,7 @@ void TMainGUI::InitializeClusterTree(TString rootFile) {
   fTree->Branch("fEventId", &fEventId, "fEventId/I");
   fTree->Branch("fNClusters", &fNClusters, "fNClusters/I");
   fTree->Branch("fTrigWindow", &fTrigWindow, "fTrigWindow/I");
+  fTree->Branch("fTimeTick",&fTimeTick,"fTimeTick/l");//https://root.cern.ch/root/html534/TBranch.html
   fTree->Branch("fTimeStamp",&fTimeStamp,"fTimeStamp/D");
   fTree->Branch("fbufferId",&fbufferId,"fbufferId/I");
   fTree->Branch("fCluSize", &fCluSize, "fCluSize[fNClusters]/I"); 
@@ -607,8 +608,9 @@ void TMainGUI::SaveClusters(Int_t NbClusters, Int_t nev){
   fEventId   = nev;
   fNClusters = NbClusters;
   fTrigWindow = Polarimeter->numPix;
-  fTimeStamp =  (Double_t)Polarimeter->timestamp;
-  fbufferId = Polarimeter->bufferID;
+  fTimeTick   = Polarimeter->timetick;
+  fTimeStamp  = Polarimeter->timestamp;
+  fbufferId   = Polarimeter->bufferID;
   for (Int_t i=0; i<NbClusters; i++){
     fPHeight[i]            = Polarimeter->fAllClusts[i]->fPulseHeight;
     fStoN [i]              = Polarimeter->fAllClusts[i]->fSignalToNoise;

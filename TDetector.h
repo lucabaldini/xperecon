@@ -41,7 +41,9 @@ class TDetector {
   Int_t Roi[4], numPix;    
   Float_t thr;
   UShort_t time1, time2;
-  ULong64_t timestamp;
+  UShort_t run1, run2;
+  ULong64_t timetick;
+  Double_t  timestamp;
   Int_t bufferID;
   MatrixFloat_t PixToCartX;
   MatrixFloat_t PixToCartY;

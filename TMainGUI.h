@@ -83,6 +83,7 @@ class TMainGUI: public TGMainFrame{
   Int_t chans;
   Int_t   fEventId;
   Int_t   fNClusters;
+  ULong64_t fTimeTick;
   Double_t fTimeStamp;
   Int_t   fTrigWindow, fbufferId;
   Int_t   fCluSize[MAXNUMCLUSTS];

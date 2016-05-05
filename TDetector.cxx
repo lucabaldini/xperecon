@@ -172,12 +172,20 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
     }
   }
   
-  //timestamp = (Double_t)(time1 + time2*65534)*0.8; //in microsec
-  timestamp = (ULong64_t)time1 + (ULong64_t)time2*65534 + (ULong64_t)roll*TMath::Power(2.,32);
-  
-  // 4 Dummy read 
-  for (int j=0; j<4; j++)fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
+  timetick = (ULong64_t)time1 + (ULong64_t)time2*65534 + (ULong64_t)roll*TMath::Power(2.,32);
+  //timestamp = (Double_t)timetick*0.8; //in microsec  
+    
+  // next 4 reads now contains the run start time in seconds (given by DAQ gui)
+  fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
+  fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
+  run1 = COMB(tmp1,tmp2);
+  fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
+  fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
+  run2 = COMB(tmp1,tmp2);
 
+  timestamp = (Double_t)(run2 +run1*65536)+ (Double_t)timetick*0.8/1e6; //in seconds
+
+    
   Int_t pixel_counter = 0;
   // ==>> !!! Swap ix with iy respect to previous versions
   // explanations in readme.txt.- Swap has been done just for coherence with the coord. system BUT nothing has changed 

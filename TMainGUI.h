@@ -81,6 +81,7 @@ class TMainGUI: public TGMainFrame{
   Char_t pName[120], dName[120], nName[120], fName[120];
   Float_t fPixelThreshold;
   Int_t chans;
+  UInt_t  fRunId;
   Int_t   fEventId;
   Int_t   fNClusters;
   ULong64_t fTimeTick;

@@ -320,7 +320,10 @@ void TMainGUI::DataAnalysis()
     rootFile.Replace(size-5,rootExt.Length(),rootExt);
     cout << "\nInput file       --> " << DataName << endl;
     cout << "Clusters saved in --> " << rootFile << endl;
-    
+
+    //Need to extract Run Number and write in output.
+    fRunId = 0; // for now!!!
+      
     if (!gSystem->AccessPathName(DataName, kFileExists)) {
       MCflag = 0;
       NewDataFlag = 0; // <<<<<<=============== Flag for reading matrix of data from new chip3
@@ -521,6 +524,7 @@ void TMainGUI::InitializeClusterTree(TString rootFile) {
   DataAnalizedFile = new TFile(rootFile, "RECREATE");
   cout << ".........Initializing Clusters Tree........";
   fTree = new TTree("tree","Analized Data Tree");
+  fTree->Branch("fRunId", &fRunId, "fRunId/i");
   fTree->Branch("fEventId", &fEventId, "fEventId/I");
   fTree->Branch("fNClusters", &fNClusters, "fNClusters/I");
   fTree->Branch("fTrigWindow", &fTrigWindow, "fTrigWindow/I");

@@ -3,7 +3,7 @@ PH_HighTh: 15000.0
 PH_LowTh2: 0.0
 PH_HighTh2: 0.0
 NCluster_LowTh: 0.0
-NCluster_HighTh: 1.0
+NCluster_HighTh: 10.0
 StoN_LowTh: 0.0
 StoN_HighTh: 500.0
 CluSize_LowTh: 5.0
@@ -13,10 +13,10 @@ Shape__HighTh: 100.0
 M3_LowTh: -1.0
 M3_HighTh: 1.0
 CircleRadiusCut: 10
-XellipseCut: 1.
-YellipseCut: 1.
-R1ellipseCut: 2.
-R2ellipseCut: 3.
+XellipseCut: -2.5
+YellipseCut: -2.5
+R1ellipseCut: 1.
+R2ellipseCut: 1.
 ThetaellipseCut: 0.
 Geo_LeftCut: -7.6
 Geo_RightCut: 7.6

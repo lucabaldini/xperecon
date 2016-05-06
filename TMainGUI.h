@@ -137,7 +137,7 @@ class TMainGUI: public TGMainFrame{
   //TGTextBuffer *fPName, *fDName, *fEvPed;
   TGTextBuffer *fEvData;
   //Text_t *PedName, *DataName;
-  TString PedName, DataName;
+  TString PedName, DataName, RunIdName;
  
   TStopwatch timer1;
   ofstream pFileName, dFileName, infofile;;

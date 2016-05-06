@@ -322,6 +322,11 @@ void TMainGUI::DataAnalysis()
     cout << "Clusters saved in --> " << rootFile << endl;
 
     //Need to extract Run Number and write in output.
+    RunIdName = DataName;
+    RunIdName = RunIdName.ReplaceAll(".mdat", "");
+    RunIdName = RunIdName.ReplaceAll("data", "");
+    RunIdName = RunIdName.ReplaceAll("_", "");
+    cout << "RunId Name = " << RunIdName << " " << endl;
     fRunId = 0; // for now!!!
       
     if (!gSystem->AccessPathName(DataName, kFileExists)) {

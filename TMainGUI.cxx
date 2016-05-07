@@ -277,6 +277,26 @@ void TMainGUI::DataSelect()
   return;
 }
 
+/*! This function is supposed to retrive the Run number.
+  Now from file name, assuming xpedaq convention, in the future from a db
+  Some tricks to check if we are under Linux or Windows.
+ */
+Int_t TMainGUI::GetRunId(TString RunIdName)
+{
+  cout << "GetRunId:: RunId Name = " << RunIdName << " " << endl;
+  RunIdName = RunIdName.ReplaceAll(".mdat", "");
+  RunIdName = RunIdName.ReplaceAll("data", "");
+  RunIdName = RunIdName.ReplaceAll("_", "");
+  Ssiz_t lastMarker = RunIdName.Last('/'); // assume linux..
+  if (lastMarker<0){ // must be windows
+        lastMarker = RunIdName.Last('\\');  
+  }
+  RunIdName.Remove(0, lastMarker+1);
+  cout << "GetRunId:: RunId = " << RunIdName << " " << endl;
+  //UInt_t RunId = (UInt_t) RunIdName.Data();
+      
+  return 0;// for now!!!
+}
 
 void TMainGUI::DataAnalysis()
 {
@@ -322,12 +342,7 @@ void TMainGUI::DataAnalysis()
     cout << "Clusters saved in --> " << rootFile << endl;
 
     //Need to extract Run Number and write in output.
-    RunIdName = DataName;
-    RunIdName = RunIdName.ReplaceAll(".mdat", "");
-    RunIdName = RunIdName.ReplaceAll("data", "");
-    RunIdName = RunIdName.ReplaceAll("_", "");
-    cout << "RunId Name = " << RunIdName << " " << endl;
-    fRunId = 0; // for now!!!
+    fRunId = GetRunId(DataName); 
       
     if (!gSystem->AccessPathName(DataName, kFileExists)) {
       MCflag = 0;

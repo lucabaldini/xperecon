@@ -58,8 +58,8 @@ void TDetector::CreatePixLookup() {
   while(!fPixFile->fStream.eof()) {
     fPixFile->fStream >> x >> y >> i >> j;
     fPixFile->fStream >> fPixMap[i][j] >> fPixMask[i][j] >> fBorderPixel[i][j];
-    PixToCartX[i][j] = x;
-    PixToCartY[i][j] = y;
+    PixToCartX[i][j] = x; //*0.996155; // Tentative correction, not sure is real
+    PixToCartY[i][j] = y; //*0.999533; // davvero?
   }
 }
 
@@ -190,6 +190,10 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
   // ==>> !!! Swap ix with iy respect to previous versions
   // explanations in readme.txt.- Swap has been done just for coherence with the coord. system BUT nothing has changed 
   // in practice in the results.
+  // Note on coordi system: ASIC system uses X on short side and
+  // Y on long side with (0,0) on top left corner;
+  // here we swap X and Y to have (0,0) on lower left corner,
+  // now X is long side and Y is the short one
    for (Int_t ix=Roi[2]; ix<=Roi[3]; ix++){
      for (Int_t iy=Roi[0]; iy<=Roi[1]; iy++){
        Int_t wch = (ix-Roi[2])+(iy-Roi[0])*(Roi[1]-Roi[0]+1);     
@@ -198,7 +202,7 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
 
        if(jump==0){ // <-------------- 3/07/2013
 	 chan = fPixMap[ix][iy];
-	 fRawChannelData[chan] = COMB(tmp1,tmp2);  
+	 fRawChannelData[chan] = COMB(tmp1,tmp2);
 	 fPedSubtrSignal[chan] = fRawChannelData[chan];
 	 fROIRawData[wch] = -1.*fPedSubtrSignal[chan];
 	 if (fROIRawData[wch] > fPixelThresh) pixel_counter++;  // count pixel over threshold for cumulative map!!!
@@ -208,7 +212,9 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
    
    if(jump)return(2); // <-------------- 3/07/2013
 
-   for (Int_t i=0; i<NCHANS; ++i) fPedSubtrSignal[i] = (fPedSubtrSignal[i] > 4000 ? 0 :fPedSubtrSignal[i]);
+   // Not sure why we have this check here, let's comment this line for now. see issue
+   // https://github.com/lucabaldini/xperecon/issues/2
+   //for (Int_t i=0; i<NCHANS; ++i) fPedSubtrSignal[i] = (fPedSubtrSignal[i] > 4000 ? 0 :fPedSubtrSignal[i]); 
 
   // Create signal matrix.
   for (Int_t i=0; i<PIX_X_DIM; ++i) {

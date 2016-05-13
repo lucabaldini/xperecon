@@ -70,6 +70,11 @@ Int_t TDetector::ReadMCFile(Int_t entry){
   C=Evtree->GetEntry(entry);  
    for(Int_t ch=0;ch<Clusterdim;ch++)
     {
+      if (Channel[ch]<0 || Channel[ch]>NCHANS) {
+	cout << "ERROR: non existing channel "<< Channel[ch] << " in evt " 
+	     << entry << " ch id "<< ch << "! END OF LOOP"<< endl;
+	break;
+      }
       fPedSubtrSignal[Channel[ch]] = (Double_t)DigiCharge[ch] - 1400;
     }
    // Create signal matrix.

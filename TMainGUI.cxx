@@ -1,4 +1,6 @@
 #include "TMainGUI.h"
+#include <algorithm>
+bool sort_by_ph (TCluster* x, TCluster* y) { return (x->fPulseHeight > y->fPulseHeight); }
 
 TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   ifstream infofilein;
@@ -628,6 +630,7 @@ void TMainGUI::SaveEventstree(Int_t NbClusters, Int_t nev){
   return;
 }
 
+
 void TMainGUI::SaveClusters(Int_t NbClusters, Int_t nev){
   fEventId   = nev;
   fNClusters = NbClusters;
@@ -635,6 +638,11 @@ void TMainGUI::SaveClusters(Int_t NbClusters, Int_t nev){
   fTimeTick   = Polarimeter->timetick;
   fTimeStamp  = Polarimeter->timestamp;
   fbufferId   = Polarimeter->bufferID;
+  // sort by fPulseHeight, highest first, as defined in  sort_by_ph
+  if (NbClusters>1)
+    {
+      sort(Polarimeter->fAllClusts, Polarimeter->fAllClusts + NbClusters, sort_by_ph);
+    }
   for (Int_t i=0; i<NbClusters; i++){
     fPHeight[i]            = Polarimeter->fAllClusts[i]->fPulseHeight;
     fStoN [i]              = Polarimeter->fAllClusts[i]->fSignalToNoise;

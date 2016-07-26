@@ -1,43 +1,91 @@
- 
-ROOTCFLAGS    = $(shell root-config --cflags)
-ROOTLIBS      = $(shell root-config --libs)
-ROOTGLIBS     = $(shell root-config --glibs)
+include ./Makefile.inc
 
-# Linux with egcs
-CXX           = g++
-CXXFLAGS      = -O -Wall -fPIC -Wno-deprecated
-LD            = g++
-LDFLAGS       = -g
-SOFLAGS       = -shared
+TARGET		:= Pixy
+TARGLIB		:= XpeEvent.so 
 
+MAINDIR		:= $(shell pwd)
+INCDIR		:= $(MAINDIR)/include
+SRCDIR		:= $(MAINDIR)/src
+BINDIR 		:= $(MAINDIR)/bin
+LIBDIR 		:= $(MAINDIR)/lib
+OBJDIR		:= $(MAINDIR)/obj
 
-CXXFLAGS     += $(ROOTCFLAGS)
-LIBS          = $(ROOTLIBS)
-GLIBS         = $(ROOTGLIBS)
+LINKDEFS	:= TMainGUI TEventDisplay
 
-#-----------------------------------------------------------------------------------------------
+INCLUDES  	:= $(wildcard $(INCDIR)/*.h)                          
+SOURCES     	:= $(wildcard $(SRCDIR)/*.cxx)
+FSOURCES  	:= $(wildcard $(SRCDIR)/*.f)
+OBJECTS		:= $(SOURCES:$(SRCDIR)/%.cxx=$(OBJDIR)/%.o)
+OBJECTS      	+= $(OBJDIR)/PixiDict.o 
+MAINOBJ        	:= $(OBJDIR)/TPixy.o $(OBJDIR)/anyoption.o
 
-OBJS = TPixy.o TMainGUI.o TInputFile.o TEventDisplay.o THexagonCol.o TDetector.o TCluster_hex.o TEditor.o PixiDict.o
-CINT_HDRS = TInputFile.h TMainGUI.h TEventDisplay.h THexagonCol.h TDetector.h TCluster_hex.h TEditor.h PixiLinDef.h
+#-------------------------------------------------
+# primary targets
+#-------------------------------------------------
 
- PROGRAMS = Pixy
+.PHONY : lib clean
 
-Pixy:		$(OBJS)
-		$(LD) $(LDFLAGS) $(OBJS) $(GLIBS) -o Pixy
-		@echo "$@ done"
+exec: $(TARGET)
+
+$(TARGET): $(MAINOBJ) $(TARGLIB)
+	@echo "Creating executable file $@"
+	@$(LD) $(LDFLAGS) $^ -o $@  $(ROOTLIBS) $(ROOTGLIBS)
+
+lib: $(TARGLIB)
+
+$(TARGLIB): $(filter-out $(MAINOBJ),$(OBJECTS))
+	@echo "Creating shared library $@"
+	@$(LD) $(SHARED) $(LDFLAGS) $^ -o $@ $(ROOTLIBS) $(ROOTGLIBS)   
 
 clean:
-	@rm -f $(OBJS) *Dict.* core
+	@echo "Cleaning up ..."
+	@$(DEL) $(MAINDIR)/$(TARGET) $(MAINDIR)/$(TARGLIB) \
+	$(OBJECTS) $(BINDIR)/*.d \
+	$(INCDIR)/LinkDefs.h $(INCDIR)/PixiDict.h \
+	$(SRCDIR)/PixiDict.cxx 
 
-.SUFFIXES: .cxx
+#-------------------------------------------------
+# specific ROOT Classes rules
+#-------------------------------------------------
 
-.cxx.o:
-	$(CXX) $(CXXFLAGS) -c $<
+$(OBJDIR)/PixiDict.o: $(SRCDIR)/PixiDict.cxx
+	echo "Compiling $< ..."	
+	@$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
 
+#$(SRCDIR)/PixiDict.cxx : $(INCDIR)/LinkDefs.h  
+#	@echo "Creating dictionary $@"
+#	@$(ROOTSYS)/bin/rootcint -f $@ -c $(CXXFLAGS) -I$(INCDIR) $(INCDIR)/XpeEvent.h $^
+#	@mv -f $(SRCDIR)/PixiDict.h $(INCDIR)/
 
-TMainGUI.o:TMainGUI.h
-PixiDict.cxx: TMainGUI.h PixiLinkDef.h
-		@echo "Generating dictionary Dict..."
-		rootcint -f $@ -c $^
+$(SRCDIR)/PixiDict.cxx : $(INCDIR)/LinkDefs.h  
+	@echo "Creating dictionary $@"
+	@$(ROOTSYS)/bin/rootcint -f $@ -c $(INCDIR)/TMainGUI.h $^
+	@mv -f $(SRCDIR)/PixiDict.h $(INCDIR)/
 
+$(INCDIR)/LinkDefs.h : 
+	@echo "Generating $@"
+	@$(INCDIR)/LinkDefMaker.pl $(LINKDEFS)
+	@mv -f LinkDefs.h $(INCDIR)/
 
+#-------------------------------------------------
+# generic rules
+#-------------------------------------------------
+
+$(OBJDIR)/%.o : $(SRCDIR)/%.cxx; 
+	@echo "Compiling $< ..." 
+	@$(CXX) $(CXXFLAGS) $(ROOTCFLAGS) -I$(INCDIR) -c $< -o $@
+
+$(OBJDIR)/%.o : $(SRCDIR)/%.f; 
+	@echo "Compiling $< ..." 
+	@$(FC) $(FCFLAGS) -c $< -o $@
+
+$(BINDIR)/%.d : $(SRCDIR)/%.cxx; 
+	@echo "Making dependencies for file $< ..."
+	@set -e;\
+	$(CXX) -MM $(CXXFLAGS) $(ROOTCFLAGS) -I$(INCDIR) -w $< | \
+	sed 's!$*\.o!$(BINDIR)& $@!' >$@;\
+	[ -s $@ ] || rm -f $@		
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(SOURCES:$(SRCDIR)/%.cxx=$(BINDIR)/%.d)
+endif

@@ -140,7 +140,7 @@ class TMainGUI: public TGMainFrame{
   TString PedName, DataName, RunIdName;
  
   TStopwatch timer1;
-  ofstream pFileName, dFileName, infofile;;
+  ofstream pFileName, dFileName, infofile;
   ifstream pUpdatePedFile, pUpdateDataFile; 
   ifstream inPeds;
   ofstream outPeds;

@@ -75,7 +75,7 @@ allROOTLIBS 	    := $(shell root-config --libs) -lMinuit -lTreePlayer
 misslibs 		   = -lPhysics
 ROOTLIBS  		   = $(filter-out $(misslibs),$(allROOTLIBS))
 #ROOTGRAPHICSLIBS := -lGui -lGeom -lGeomPainter -lHistPainter
-ROOTGLIBS     	 := $(shell root-config --glibs) -lGpad -lGX11 -lX3d -lGeom -lGeomPainter -lHistPainter
+ROOTGLIBS     	 := $(shell root-config --glibs) -lGeom -lGeomPainter -lHistPainter
 
 #-------------------------------------------------
 # platform-specific definitions

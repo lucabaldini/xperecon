@@ -182,10 +182,11 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
       InitializeClusterTree(rootFile);
       if ( RawFlag && NewDataFlag ) InitializeRawSignalTree();
 
-      gSystem->ChangeDirectory(_workingDir);         
-      if ( !gSystem->AccessPathName( "pixmap.dat", kFileExists )) {
-	PixFileName = new TInputFile("pixmap.dat", kAscii);
-	 
+      gSystem->ChangeDirectory(_workingDir);   
+      string mapName;
+      mapName = "pixmap_xpe.fits";
+
+      if ( !gSystem->AccessPathName(mapName.c_str(), kFileExists )) {
 	if ( MCflag ) {
 	  if (VLEVEL >= 0) 
 	    cout <<  "[" << _progName << " - WARNING] MonteCarlo data " << endl;
@@ -197,7 +198,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 	  else stopEv = (int)NEVTS;
 
 	  cout << "[" << _progName << " - MESSAGE] Events to be read in MC tree:  " << stopEv-startEv+1 << endl;
-	  Polarimeter = new TDetector(t,PixFileName);
+	  Polarimeter = new TDetector(mapName,t);
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
@@ -224,7 +225,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 	  if (VLEVEL >= 0) 
 	    cout <<  "[" << _progName << " - WARNING] Real data " << endl;
 	  RawFileName = new TInputFile(DataName, kBinary);
-	  Polarimeter = new TDetector(PixFileName, RawFileName);
+	  Polarimeter = new TDetector(mapName, RawFileName);
 	   
 	  if(HeaderOn)Polarimeter->SetHeaderOn();
 	  Polarimeter->SetWeight(Weight);
@@ -610,8 +611,6 @@ Int_t TEventAnalysis::GetRunId(TString RunIdName)
 
 void TEventAnalysis::CloseFiles(){
   gSystem->ChangeDirectory(_workingDir);
-  PixFileName->fStream.close();
-  delete PixFileName;
   if (!MCflag) {
     RawFileName->fStream.close();
     delete RawFileName;

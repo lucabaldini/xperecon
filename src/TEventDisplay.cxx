@@ -1,4 +1,6 @@
 #include "TEventDisplay.h"
+#include <fitsio.h>
+
 TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
 			     UInt_t w, UInt_t h):TGTransientFrame(p, main, w, h)
 { 
@@ -14,9 +16,9 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   infofile >> Dummy  >>  WideCRadius;
   infofile.close();
     
-  fullpath = workingdir +"/RawSignals.root";
-  if (!gSystem->AccessPathName(fullpath, kFileExists)) {
-    RawSignalFile = new TFile(fullpath, "r");
+  fullpath = workingdir + "/RawSignals.root";
+  if (!gSystem->AccessPathName(fullpath.c_str(), kFileExists)) {
+    RawSignalFile = new TFile(fullpath.c_str(), "r");
     RawTree = (TTree*)gDirectory->Get( "RawSignaltree" );
     RawTree->SetBranchAddress("fEventId", &fEventId);
     RawTree->SetBranchAddress("fRawSignal",fRawSignal);
@@ -69,13 +71,13 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   fPreviousEvt->Connect("Clicked()","TEventDisplay",this,"PrevEv()");
 
   //Display single event
-  fPlotButton = new TGTextButton(fEvSelectFrame, "&Display event");
+  fPlotButton = new TGTextButton(fEvSelectFrame, "&Display Track");
   fPlotButton->ChangeBackground(green);
   fPlotButton->Connect("Clicked()","TEventDisplay",this,"DisplayEv()");
   fPlotButton->SetToolTipText("Press here to display event");
 
   //Display raw data
-  fDisplaySigButton = new TGTextButton(fEvSelectFrame, "Display &Raw event");
+  fDisplaySigButton = new TGTextButton(fEvSelectFrame, "Display &Raw Data");
   fDisplaySigButton->Connect("Clicked()","TEventDisplay",this,"DisplayRawEv()");
   fDisplaySigButton->SetToolTipText("Press here to display raw signal");
 
@@ -94,7 +96,7 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   fZoom->AddText(0,fZoomFact);
 
   //Display event selected through cuts 
-  fPlotButtonSel = new TGTextButton(fEvSelectFrame, "&Select event");
+  fPlotButtonSel = new TGTextButton(fEvSelectFrame, "&Select Track");
   fPlotButtonSel->Connect("Clicked()","TEventDisplay",this,"SelectEv()");
   fPlotButtonSel->SetToolTipText("Press here to select events which pass all the CUTS");
 
@@ -380,7 +382,7 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   Resize(700,500);
  
   MapSubwindows();
-  SetWindowName("PixiE Data Display (v4)");
+  SetWindowName("Pixy Data Display (v6.1)");
   MapWindow();
   Move(100,400);
   RawSignalHisto=NULL;		//to avoid sigfault when calling the button more than once.
@@ -934,10 +936,7 @@ void TEventDisplay::InitializePlots(){
   // Define some variables (relevant in this scope).
   Int_t fEvtWidthY;
   Float_t fEvtBorder;
-  //fDetectorRadius = TMath::Sqrt((PITCH*PITCH)*NCHANS*(0.275664448));
-  //fEvtWidth = Int_t(fDetectorRadius*1.3);
-  //fEvtWidthX = Int_t(1.3*PIX_X_DIM*PITCH*0.86);
-  fEvtWidthY = Int_t(1.2*PIX_Y_DIM*PITCH/2);
+  fEvtWidthY = Int_t(1.2*PIX_C_DIM*PITCH/2);
   fEvtBorder = 0.2*fEvtWidthY;
   // Draw the frame containing the display of single events.
   fDisplayCanvas->cd(1);
@@ -1040,7 +1039,7 @@ void TEventDisplay::BookHistos(){
   obj = fTheta1Histo;
   histList->Add(obj);
 
-  fThirdMomHisto = new TH1F("Third Momentum", "Major Third Momentum", 500, -0.0031, 0.003);
+  fThirdMomHisto = new TH1F("Third Moment", "Major Third Moment", 500, -0.0031, 0.003);
   fThirdMomHisto->GetXaxis()->SetTitle("Third Momentum along principal axis");
   obj = fThirdMomHisto;
   histList->Add(obj);
@@ -1253,56 +1252,32 @@ void TEventDisplay::DrawDirection(Float_t x, Float_t y, Float_t phi, Color_t col
 void TEventDisplay::ReadPixmap(){
   // Draw the border pixels;
   ifstream PixmapFile1;
-  Char_t dummyChar[10];
-  Int_t dummy, u, v, border, mask;
-  Int_t i;
-  Float_t X, Y, minX, maxX, minY, maxY;
-  Int_t u0, du, index, lflag, hflag;
  
-  fullpath = workingdir + "/pixmap.dat";
-  //cout << "READ PIXMAP in: " << fullpath << endl;
-  if (!gSystem->AccessPathName(fullpath, kFileExists)) {
-    // Read the file for the first time as to evaluate minX, maxX, minY and maxY.
-    minX = 0.0;
-    maxX = 0.0;
-    minY = 0.0;
-    maxY = 0.0;
-    u0 = 19;
-    du = 20;
-    index = 0;
-    lflag = hflag =0;  
-    PixmapFile1.open(fullpath, ios::in);
-    // Read the (u, v) coordinates of the center.
-    PixmapFile1 >> dummy >> dummy;
-    for (i=0; i<7; i++){
-      PixmapFile1 >> dummyChar;
-    }
-    while (! PixmapFile1.eof())
-      {
-	PixmapFile1 >> X >> Y >> u >> v >> dummy >> mask >> border;
-	PixmapX[u][v] = X;
-	PixmapY[u][v] = Y;
-	PixMask[u][v] = mask;
-	PixBorder[u][v] =  border;
+  fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
+  int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
+  long ntrows;
+  char TABNAME[] = "PIXMAP";
 
-	if (border)
-	  {
-	    if (X < minX) minX = X;
-	    if (X > maxX) maxX = X;
-	    if (Y < minY) minY = Y;
-	    if (Y > maxY) maxY = Y;
-	  }	
-      }
-    PixmapFile1.close();
+  string fullpath = workingdir + "/pixmap_xpe.fits";
+  if (!fits_open_file(&fptr, fullpath.c_str(), READONLY, &status)) {
+  fits_movnam_hdu(fptr, BINARY_TBL, TABNAME,0, &status);
+  fits_get_num_rows(fptr, &ntrows, &status);
+  }
+  else cout << "ERROR!!!!!" << endl;
+  return;
+
+  if (!gSystem->AccessPathName(fullpath.c_str(), kFileExists)) {
+    // Read the file for the first time as to evaluate minX, maxX, minY and maxY.
+  
     PixelHit pixel;
     THexagonCol *hexagon;
     
-    for (Int_t k=0; k< PIX_X_DIM; k++)
-      for (Int_t j=0; j< PIX_Y_DIM; j++)
+    for (int nr=0; nr< PIX_R_DIM; nr++)
+      for (int nc=0; nc< PIX_C_DIM; nc++)
 	{
-	  if (PixBorder[k][j]){
-	    pixel.X = PixmapX[k][j];
-	    pixel.Y = PixmapY[k][j];
+	  if (PixBorder[nr][nc]){
+	    pixel.X = PixmapX[nr][nc];
+	    pixel.Y = PixmapY[nr][nc];
 	    pixel.Height = PITCH/2;
 	    hexagon = new THexagonCol(pixel);
 	    hexagon->Draw(kRed);
@@ -1480,7 +1455,7 @@ void TEventDisplay::SelectAnalisedFile(){
   if(cludata=="") return; 
   if(cludata.Contains("RawSignals")){
     box = new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(),"Message", 
-    		     Form("Wrong ROOT file selected!!!",0), icontype, buttons, &retval);
+    		     "Wrong ROOT file selected!!!", icontype, buttons, &retval);
     cout << "===> ATTENTION!!! Wrong ROOT file selected!!!" << endl;
     CloseWindow();
       return;
@@ -1544,7 +1519,7 @@ void TEventDisplay::PrevEv(){
 void TEventDisplay::DisplayRawEv(){
   if (!RawSignalFlag) {
     box = new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(),"Error Message", 
-		       Form("File with Raw Signal not existing. Run Analize data first!!!",0),icontype, buttons, &retval);
+		       "File with Raw Signal not existing. Run Analize data first!!!",icontype, buttons, &retval);
     return;
   }
   else {
@@ -1803,12 +1778,13 @@ void TEventDisplay::DrawHistos(){
 	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
 	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )
-	    {FillHistos(ncl);
-	    if (flagClu){
-	      ((TH1F*)histList->At(2))->Fill(fNClusters);
-	      ((TH1F*)histList->At(3))->Fill(fTrigWindow);
-	    }
-		    flagClu = 0;		    
+	    {
+	      FillHistos(ncl);
+	      if (flagClu){
+		((TH1F*)histList->At(2))->Fill(fNClusters);
+		((TH1F*)histList->At(3))->Fill(fTrigWindow);
+	      }
+	      flagClu = 0;		    
 	    }
 	}  		
 	if(OrFlag){
@@ -1824,12 +1800,13 @@ void TEventDisplay::DrawHistos(){
 	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
 	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )				     
-	    {FillHistos(ncl);
-	    if (flagClu){
-	      ((TH1F*)histList->At(2))->Fill(fNClusters);
-	      ((TH1F*)histList->At(3))->Fill(fTrigWindow);
-	    }
-	    flagClu = 0;		    
+	    {
+	      FillHistos(ncl);
+	      if (flagClu){
+		((TH1F*)histList->At(2))->Fill(fNClusters);
+		((TH1F*)histList->At(3))->Fill(fTrigWindow);
+	      }
+	      flagClu = 0;		    
 	    }
 	}
       }

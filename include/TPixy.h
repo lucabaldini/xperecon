@@ -63,10 +63,9 @@ using namespace std;
 #include <TPaveStats.h>
 // Constants, parameters and other stuff.
 
-//#define NCHANS 22080             // Number of channels.
-#define PIX_X_DIM 352            // Number of pixels in X direction.
-#define PIX_Y_DIM 300            // Number of pixels in Y direction.
-#define PITCH  0.050              // Readout pitch in mm.
+#define PIX_R_DIM 352            // Number of readout rows
+#define PIX_C_DIM 300            // Number of readout columns
+#define PITCH  0.050             // Readout pitch in mm.
 #define MAXNUMCLUSTS 200         // Maximum allowed number of clusters in one event.
 #define MAXCLUSIZE 400           // Maximum allowed cluster size in one event
 #define MINCLUSIZE 6             // Minimum allowed cluster size in one event
@@ -100,9 +99,9 @@ const Int_t maxPixTrasm = 1195;
 
 // Types definition.
 typedef UShort_t Adcword_t;
-typedef Float_t MatrixFloat_t[PIX_X_DIM] [PIX_Y_DIM];
-typedef Int_t MatrixInt_t[PIX_X_DIM][PIX_Y_DIM];
-typedef UShort_t MatrixUshort_t[PIX_X_DIM][PIX_Y_DIM];
+typedef Float_t MatrixFloat_t[PIX_R_DIM] [PIX_C_DIM];
+typedef Int_t MatrixInt_t[PIX_R_DIM][PIX_C_DIM];
+typedef UShort_t MatrixUshort_t[PIX_R_DIM][PIX_C_DIM];
 
 enum {HEADON, FILE_OPEN, WEXIT, SEL_EV, SLIDER_EV,   
       OR, AND, ABOUT, UPDATEPED, UPDATEDATA,

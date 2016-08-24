@@ -194,7 +194,7 @@ TCluster::TCluster(MatrixFloat_t SignalMatrix, MatrixInt_t OverThresh, MatrixInt
  *                            pulse height, centers of gravity, etc.    *
  ************************************************************************/
 
-void TCluster::CalcProperties(MatrixFloat_t SignalMatrix, MatrixFloat_t NoiseMatrix, UShort_t BorderPixel[PIX_X_DIM][PIX_Y_DIM],
+void TCluster::CalcProperties(MatrixFloat_t SignalMatrix, MatrixFloat_t NoiseMatrix, UShort_t BorderPixel[PIX_R_DIM][PIX_C_DIM],
 			      MatrixFloat_t PixToCartX, MatrixFloat_t PixToCartY, Int_t MCflag, Float_t Weight,  
 			      Float_t SmallCircleRadius, Float_t WideCircleRadius) {
   Float_t XResid, YResid; 

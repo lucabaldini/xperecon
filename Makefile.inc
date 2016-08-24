@@ -77,6 +77,13 @@ ROOTLIBS  		   = $(filter-out $(misslibs),$(allROOTLIBS))
 #ROOTGRAPHICSLIBS := -lGui -lGeom -lGeomPainter -lHistPainter
 ROOTGLIBS     	 := $(shell root-config --glibs) -lGeom -lGeomPainter -lHistPainter
 
+
+#-------------------------------------------------
+# FITSIO LIB
+#-------------------------------------------------
+
+CFITSIOLIB       := -L$(CFITSIO)/lib -lcfitsio 
+
 #-------------------------------------------------
 # platform-specific definitions
 #-------------------------------------------------
@@ -107,6 +114,8 @@ CXXFLAGS += -v
 endif
 
 CXXFLAGS += $(ROOTCFLAGS)
+
+CXXFLAGS  += -I$(CFITSIO)/include
 
 # Fortran flags
 FCFLAGS:= -O3 -fPIC -Wall

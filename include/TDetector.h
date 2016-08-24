@@ -6,7 +6,7 @@
 #include "TCluster_hex.h"
 #include "TTree.h"
 
-#define COMB(x1,x2) (((x2 & 0xff)<<8)|x1 & 0xff)
+#define COMB(x1,x2) (((x2 & 0xff)<<8)|(x1 & 0xff))
 
 class TDetector {
 
@@ -61,8 +61,11 @@ class TDetector {
 
  
   TDetector(TInputFile*, TInputFile*);
-  TDetector(TTree *,TInputFile*);
+  TDetector(string fitsname, TInputFile*);
+  TDetector(TInputFile*,TTree*);
+  TDetector(string fitsname,TTree*);
   void CreatePixLookup();
+  int FitsToPixmap(string fitsname);
   Int_t ReadMCFile(Int_t);
   Int_t ReadROInew(Int_t); // for new data stream (window mode) with timestamp et al. 
   Int_t FindClusters();

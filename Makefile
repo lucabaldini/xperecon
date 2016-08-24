@@ -29,20 +29,19 @@ exec: $(TARGET)
 
 $(TARGET): $(MAINOBJ) $(TARGLIB)
 	@echo "Creating executable file $@"
-	@$(LD) $(LDFLAGS) $^ -o $@  $(ROOTLIBS) $(ROOTGLIBS)
+	@$(LD) $(LDFLAGS) $^ -o $@  $(ROOTLIBS) $(ROOTGLIBS) $(CFITSIOLIB)
 
 lib: $(TARGLIB)
 
 $(TARGLIB): $(filter-out $(MAINOBJ),$(OBJECTS))
 	@echo "Creating shared library $@"
-	@$(LD) $(SHARED) $(LDFLAGS) $^ -o $@ $(ROOTLIBS) $(ROOTGLIBS)   
+	@$(LD) $(SHARED) $(LDFLAGS) $^ -o $@ $(ROOTLIBS) $(ROOTGLIBS) $(CFITSIOLIB) 
 
 clean:
 	@echo "Cleaning up ..."
 	@$(DEL) $(MAINDIR)/$(TARGET) $(MAINDIR)/$(TARGLIB) \
 	$(OBJECTS) $(BINDIR)/*.d \
-	$(INCDIR)/LinkDefs.h $(INCDIR)/PixiDict.h \
-	$(SRCDIR)/PixiDict.cxx 
+	$(INCDIR)/PixiDict.h \$(SRCDIR)/PixiDict.cxx 
 
 #-------------------------------------------------
 # specific ROOT Classes rules

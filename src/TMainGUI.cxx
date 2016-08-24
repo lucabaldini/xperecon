@@ -1,5 +1,6 @@
 #include "TMainGUI.h"
 #include <algorithm>
+
 bool sort_by_ph (TCluster* x, TCluster* y) { return (x->fPulseHeight > y->fPulseHeight); }
 
 TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
@@ -158,7 +159,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   
   MapSubwindows();
   Resize(GetDefaultSize());
-  SetWindowName("Pixy Control Panel (v5)");
+  SetWindowName("Pixy Control Panel (v6.1)");
   Resize(550, 450);
   MapWindow();
   Move(100,10);
@@ -228,8 +229,7 @@ Bool_t TMainGUI::ProcessMessage(Long_t msg, Long_t par1, Long_t){
 	  RawFlag = 1;
 	  cout << "\n===>> Raw Signals will be saved in file RawSignals.root!!"<< endl; 
 	  box = new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(),"Message", 
-			     Form("Raw Signals will be saved in file RawSignals.root ONLY for data taken in Window mode!!!",0)
-			     ,icontype, buttons, &retval);
+			     "Raw Signals will be saved in file RawSignals.root ONLY for data taken in Window mode!!!",icontype, buttons, &retval);
 	}
 	else {
 	  RawFlag = 0;
@@ -308,6 +308,7 @@ void TMainGUI::DataAnalysis()
   TString rootFile;
   TString rootExt = "_TH";
   Int_t size;
+  string mapName;
   cout << "=====> START ANALYSIS!!!!! " << endl;
   DataPanelDisable();
   eofdata = 0;
@@ -366,17 +367,16 @@ void TMainGUI::DataAnalysis()
        
       if (RawFlag&&NewDataFlag) InitializeRawSignalTree();
       gSystem->ChangeDirectory(workingdir);
-         
-      if (!gSystem->AccessPathName( "pixmap.dat", kFileExists )) {
-	PixFileName = new TInputFile("pixmap.dat", kAscii);
-	 
+      
+      mapName = "pixmap_xpe.fits";
+      if (!gSystem->AccessPathName(mapName.c_str(), kFileExists )) {
 	if (MCflag) {
 	  TFile *f = new TFile(DataName);
 	  TTree *t=(TTree*)f->Get("EventsTree");
 	  if (TString(fEvData1->GetString()) == "All")stopEv=(int)t->GetEntries();
 	  else stopEv = atoi(fEvData1->GetString());
 	  cout << "Events to be read in MC tree:  " << stopEv-startEv+1 << endl;
-	  Polarimeter = new TDetector(t,PixFileName);
+	  Polarimeter = new TDetector(mapName,t);
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
@@ -399,8 +399,7 @@ void TMainGUI::DataAnalysis()
 
 	else {
 	  RawFileName = new TInputFile(DataName, kBinary);
-	  Polarimeter = new TDetector(PixFileName, RawFileName);
-	   
+	  Polarimeter = new TDetector(mapName, RawFileName);
 	  if(HeaderOn)Polarimeter->SetHeaderOn();
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
@@ -473,7 +472,7 @@ void TMainGUI::DataAnalysis()
 	if (RTFlag&&nev) WriteEventsTree();
 	WriteClusterTree(rootFile);
 	if (RawFlag&&NewDataFlag&&nev) WriteRawSignalTree();
-	if(nev)DrawCumulativeHitMap(nev);
+	//if(nev)DrawCumulativeHitMap(nev);
 
 	CloseFiles();	   
 	 
@@ -502,8 +501,6 @@ void TMainGUI::DataDisplay()
 
 void TMainGUI::CloseFiles(){
   gSystem->ChangeDirectory(workingdir);
-  PixFileName->fStream.close();
-  delete PixFileName;
   if (!MCflag) {
     RawFileName->fStream.close();
     delete RawFileName;

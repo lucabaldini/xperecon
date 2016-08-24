@@ -43,7 +43,7 @@ class TCluster {
   TCluster(MatrixFloat_t, MatrixInt_t, MatrixInt_t, Int_t, Int_t, Int_t, Int_t);
   //~TCluster();   // Default destructor.
 
-  void CalcProperties(MatrixFloat_t, MatrixFloat_t, UShort_t[PIX_X_DIM][PIX_Y_DIM], MatrixFloat_t, MatrixFloat_t, Int_t, 
+  void CalcProperties(MatrixFloat_t, MatrixFloat_t, UShort_t[PIX_R_DIM][PIX_C_DIM], MatrixFloat_t, MatrixFloat_t, Int_t, 
 		      Float_t, Float_t, Float_t);
   void DrawProperties();
   Float_t PixelWeight(Float_t, Float_t, Float_t, Float_t);

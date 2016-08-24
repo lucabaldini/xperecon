@@ -86,7 +86,8 @@ private:
   Float_t CircleRadiusCut;
   Float_t XEllipseCut, YEllipseCut, R1EllipseCut, R2EllipseCut, ThetaEllipseCut;
 
-  TString workingdir, datadir, fullpath;
+  TString datadir;
+  string workingdir, fullpath;
   TString infodispfn, infofn;
   TString cludata;
   TString num;

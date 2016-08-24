@@ -1,7 +1,8 @@
 #include "TDetector.h"
+#include <fitsio.h>
 #define PAR 1
 
-TDetector::TDetector(TTree *tree, TInputFile *fPix) { 
+TDetector::TDetector(TInputFile *fPix, TTree *tree) { 
   Evtree = tree;
   Evtree->SetBranchAddress("Clusterdim",&Clusterdim);
   Evtree->SetBranchAddress("Channel",Channel);
@@ -14,6 +15,18 @@ TDetector::TDetector(TTree *tree, TInputFile *fPix) {
   MCflag = 1;
 }
  
+TDetector::TDetector(string pixmap,TTree *tree) { 
+  Evtree = tree;
+  Evtree->SetBranchAddress("Clusterdim",&Clusterdim);
+  Evtree->SetBranchAddress("Channel",Channel);
+  Evtree->SetBranchAddress("DigiCharge",DigiCharge);
+  Evtree->SetBranchAddress("InitialPhi",&Phi);
+  Evtree->SetBranchAddress("XInitial",&XI);
+  Evtree->SetBranchAddress("YInitial",&YI);
+  FitsToPixmap(pixmap);
+  MCflag = 1;
+}
+
 
 TDetector::TDetector(TInputFile *fPix, TInputFile *fRaw){
   // Make the member variable pointers fRawFile, etc. point to the various
@@ -30,45 +43,99 @@ TDetector::TDetector(TInputFile *fPix, TInputFile *fRaw){
   tm.clear();
   }
 
+TDetector::TDetector(string pixmap, TInputFile *fRaw){
+  fRawFile = fRaw;
+  ifstream gainfile;
+  // Read in and create the pixel lookup table.
+  FitsToPixmap(pixmap);
+    // Reset the cumulative Hitmap
+  for (Int_t i=0; i<NCHANS; i++) fCumulativeHitmap[i] = 0;
+  MCflag = 0;
+  roll = 0;
+  tm.clear();
+  }
 
 void TDetector::CreatePixLookup() {
   Text_t DummyString[ 8 ];
   Int_t DummyInt;
-  Int_t i, j;
+  Int_t nc, nr;
   Float_t x,y;
   // Loop over all pixels, reading in the corresponding ADC channel number
   // and mask state from the file.  The first 2 entries on each line of the
   // file are the pixel coordinates - skip these.
-  for (i=0; i< PIX_X_DIM; i++)
+  for (nr=0; nr< PIX_R_DIM; nr++)
     {
-      for (j=0; j< PIX_Y_DIM; j++)
+      for (nc=0; nc< PIX_C_DIM; nc++)
 	{
-	  fPixMap[i][j] = -1;
-	  fPixMask[i][j] = 0;
-	  fBorderPixel[i][j] = 0; 
+	  fPixMap[nr][nc] = -1;
+	  fPixMask[nr][nc] = 0;
+	  fBorderPixel[nr][nc] = 0; 
 	} 
     }
-  for (i=0; i<2; i++) {
+  for (int i=0; i<2; i++) {
     fPixFile->fStream >> DummyInt;  // Skip file header.
   }
 
-  for (i=0; i<7; ++i) {
+  for (int i=0; i<7; ++i) {
     fPixFile->fStream >> DummyString;  // Skip file header.
   }
   while(!fPixFile->fStream.eof()) {
-    fPixFile->fStream >> x >> y >> i >> j;
-    fPixFile->fStream >> fPixMap[i][j] >> fPixMask[i][j] >> fBorderPixel[i][j];
-    PixToCartX[i][j] = x; //*0.996155; // Tentative correction, not sure is real
-    PixToCartY[i][j] = y; //*0.999533; // davvero?
+    fPixFile->fStream >> x >> y >> nr >> nc;
+    fPixFile->fStream >> fPixMap[nr][nc] >> fPixMask[nr][nc] >> fBorderPixel[nr][nc];
+    PixToCartX[nr][nc] = x; 
+    PixToCartY[nr][nc] = y; 
   }
+}
+
+int TDetector::FitsToPixmap(string fitsname) {
+  Int_t nr, nc;
+  fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
+  int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
+  long ntrows;
+  //int ntcols;
+  char TABNAME[] = "PIXMAP";
+  
+  for (nr=0; nr< PIX_R_DIM; nr++)
+    {
+      for (nc=0; nc< PIX_C_DIM; nc++)
+	{
+	  fPixMap[nr][nc] = -1;
+	  fPixMask[nr][nc] = 1;
+	  fBorderPixel[nr][nc] = 0; 
+	} 
+    }
+  
+  if (!fits_open_file(&fptr, fitsname.c_str(), READONLY, &status)) {
+    fits_movnam_hdu(fptr, BINARY_TBL, TABNAME,0, &status);
+    fits_get_num_rows(fptr, &ntrows, &status);
+  
+    int I[ntrows], J[ntrows];
+    float X[ntrows], Y[ntrows];
+
+    fits_read_col(fptr, TINT, 1, 1, 1, ntrows, NULL, J, NULL, &status);
+    fits_read_col(fptr, TINT, 2, 1, 1, ntrows, NULL, I, NULL, &status);
+    fits_read_col(fptr, TFLOAT, 3, 1, 1, ntrows, NULL, X, NULL, &status);
+    fits_read_col(fptr, TFLOAT, 4, 1, 1, ntrows, NULL, Y, NULL, &status);  
+
+    for (int ch = 0; ch < ntrows; ch++){
+      nr = I[ch];
+      nc = J[ch];
+      if(nr==0||nr==351)fBorderPixel[nr][nc] = 1;
+      fPixMap[nr][nc] = ch;
+      PixToCartX[nr][nc] = X[ch]; 
+      PixToCartY[nr][nc] = Y[ch]; 
+    } 
+    if (status == END_OF_FILE)  status = 0; /* Reset after normal error */
+    fits_close_file(fptr, &status);
+  }
+  return (status);
 }
 
 
 Int_t TDetector::ReadMCFile(Int_t entry){
-  Int_t C;
-  for (Int_t j=0; j<NCHANS; ++j) fPedSubtrSignal[j] = 0;
-  C=Evtree->GetEntry(entry);  
-   for(Int_t ch=0;ch<Clusterdim;ch++)
+  for (int j=0; j<NCHANS; ++j) fPedSubtrSignal[j] = 0;
+  Evtree->GetEntry(entry);  
+   for(int ch=0;ch<Clusterdim;ch++)
     {
       if (Channel[ch]<0 || Channel[ch]>NCHANS) {
 	cout << "ERROR: non existing channel "<< Channel[ch] << " in evt " 
@@ -78,11 +145,11 @@ Int_t TDetector::ReadMCFile(Int_t entry){
       fPedSubtrSignal[Channel[ch]] = (Double_t)DigiCharge[ch] - 1400;
     }
    // Create signal matrix.
-   for (Int_t i=0; i<PIX_X_DIM; ++i) {
-     for (Int_t j=0; j<PIX_Y_DIM; ++j) {
-       Int_t SirChan = fPixMap[i][j]; 
-         fSignalMatrix[i][j] = -1*fPixMask[i][j]*fPedSubtrSignal[SirChan];
-	 fCumulativeHitmap[SirChan] += fSignalMatrix[i][j];
+   for (int nr=0; nr<PIX_R_DIM; ++nr) {
+     for (int nc=0; nc<PIX_C_DIM; ++nc) {
+       int SirChan = fPixMap[nr][nc]; 
+         fSignalMatrix[nr][nc] = -1*fPixMask[nr][nc]*fPedSubtrSignal[SirChan];
+	 fCumulativeHitmap[SirChan] += fSignalMatrix[nr][nc];
      }
    }
    return(1);
@@ -94,12 +161,12 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
   Int_t chan;                      
   Char_t tmp1, tmp2;
   numPix = 0;
-  for (Int_t jj=0; jj<NCHANS; jj++){
+  for (int jj=0; jj<NCHANS; jj++){
     fRawChannelData[jj] = 0;
     fPedSubtrSignal[jj]= 0;
    }
 
-  for (Int_t jj=0; jj<maxPixTrasm; jj++)fROIRawData[jj] = 0;
+  for (int jj=0; jj<maxPixTrasm; jj++)fROIRawData[jj] = 0;
   if(numEv==1) cout << "====>>> PIXEL THRESHOLD!  " << fPixelThresh  << "  ADC counts" << endl;
     
   if(HeaderInFile && numEv==1){
@@ -139,13 +206,12 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
     tag = COMB(tmp1,tmp2);
   }
  
-  // read Ymin, Ymax, Xmin, Xmax 
+  // read colMIN, colMAX, rowMIN, rowMAX 
   for(Int_t j=0; j<4; j++){
     fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
     fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
     Roi[j] = COMB(tmp1,tmp2);
   }
-  //cout << numEv << "   Ymin: " << Roi[0] << "  Ymax: " << Roi[1] << "  Xmin: " << Roi[2] << "  Xmax: " << Roi[3]<< endl;  
   numPix = (Roi[1]+1- Roi[0])*(Roi[3]+1- Roi[2]);
 
   if(Roi[0]<0 || Roi[1]>299 || Roi[2]<0 || Roi[3]>351){ // <-------------- 3/07/2013
@@ -192,21 +258,16 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
 
     
   Int_t pixel_counter = 0;
-  // ==>> !!! Swap ix with iy respect to previous versions
-  // explanations in readme.txt.- Swap has been done just for coherence with the coord. system BUT nothing has changed 
-  // in practice in the results.
-  // Note on coordi system: ASIC system uses X on short side and
-  // Y on long side with (0,0) on top left corner;
-  // here we swap X and Y to have (0,0) on lower left corner,
-  // now X is long side and Y is the short one
-   for (Int_t ix=Roi[2]; ix<=Roi[3]; ix++){
-     for (Int_t iy=Roi[0]; iy<=Roi[1]; iy++){
-       Int_t wch = (ix-Roi[2])+(iy-Roi[0])*(Roi[1]-Roi[0]+1);     
+  
+  for (int nr=Roi[2]; nr<=Roi[3]; nr++){
+    for (int nc=Roi[0]; nc<=Roi[1]; nc++){
+      int wch = (nr-Roi[2])+(nc-Roi[0])*(Roi[1]-Roi[0]+1);   
+ 
        fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
        fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
 
        if(jump==0){ // <-------------- 3/07/2013
-	 chan = fPixMap[ix][iy];
+	 chan = fPixMap[nr][nc];
 	 fRawChannelData[chan] = COMB(tmp1,tmp2);
 	 fPedSubtrSignal[chan] = fRawChannelData[chan];
 	 fROIRawData[wch] = -1.*fPedSubtrSignal[chan];
@@ -222,12 +283,12 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
    //for (Int_t i=0; i<NCHANS; ++i) fPedSubtrSignal[i] = (fPedSubtrSignal[i] > 4000 ? 0 :fPedSubtrSignal[i]); 
 
   // Create signal matrix.
-  for (Int_t i=0; i<PIX_X_DIM; ++i) {
-    for (Int_t j=0; j<PIX_Y_DIM; ++j) {
-      chan = fPixMap[i][j]; 
-      fSignalMatrix[i][j] = fPixMask[i][j]*fPedSubtrSignal[chan]; // No inverted signal with new DAQ!!!!
-      if (fSignalMatrix[i][j] > fPixelThresh  && pixel_counter < MAXCLUSIZE){
-	fCumulativeHitmap[chan] += fSignalMatrix[i][j];
+  for (int nr=0; nr<PIX_R_DIM; ++nr) {
+    for (int nc=0; nc<PIX_C_DIM; ++nc) {
+      chan = fPixMap[nr][nc]; 
+      fSignalMatrix[nr][nc] = fPixMask[nr][nc]*fPedSubtrSignal[chan]; // No inverted signal with new DAQ!!!!
+      if (fSignalMatrix[nr][nc] > fPixelThresh  && pixel_counter < MAXCLUSIZE){
+	fCumulativeHitmap[chan] += fSignalMatrix[nr][nc];
        }
     }
   }
@@ -244,25 +305,24 @@ Int_t TDetector::FindClusters() {
   // Float_t BaryRadius;
   //Int_t NewClCounter;
   Int_t ClusterCounter;
-  Int_t i, j;
   Bool_t OverMaxClusts;
-
+  int nc, nr;
   MatrixInt_t OverThresh;          // Matrix of flags indicating which pixels are over threshold.
   MatrixInt_t AssociatedCluster;   // Matrix indicating to which cluster each pixel is associated 
   counter = 0;
 
   // Select pixels over threshold.
-  for (i=0; i<PIX_X_DIM; ++i) {
-    for (j=0; j<PIX_Y_DIM; ++j) {
+  for (nr=0; nr<PIX_R_DIM; ++nr) {
+    for (nc=0; nc<PIX_C_DIM; ++nc) {
       
-      AssociatedCluster[i][j] = -1;
+      AssociatedCluster[nr][nc] = -1;
       if (MCflag) {
-	if (fSignalMatrix[i][j] > fPixelThresh*2) OverThresh[i][j] = 1; // set the noise for MC data to 2 ADC counts 
-	else OverThresh[i][j] = 0;
+	if (fSignalMatrix[nr][nc] > fPixelThresh*2) OverThresh[nr][nc] = 1; // set the noise for MC data to 2 ADC counts 
+	else OverThresh[nr][nc] = 0;
       }
       else {
-	if (fSignalMatrix[i][j] > fPixelThresh)  OverThresh[i][j] = 1;
-	else OverThresh[i][j] = 0;
+	if (fSignalMatrix[nr][nc] > fPixelThresh)  OverThresh[nr][nc] = 1;
+	else OverThresh[nr][nc] = 0;
       }
     }
   }
@@ -270,10 +330,9 @@ Int_t TDetector::FindClusters() {
   // Find clusters algorithm... 
   ClusterCounter = 0;
   OverMaxClusts = kFALSE;
-  
-  for (i=0; i<PIX_X_DIM; ++i) {
-    for (j=0; j<PIX_Y_DIM; ++j) {    
-      if (OverThresh[i][j] && AssociatedCluster[i][j] < 0 ) {	  
+  for (nr=0; nr<PIX_R_DIM; ++nr) {
+    for (nc=0; nc<PIX_C_DIM; ++nc) {
+      if (OverThresh[nr][nc] && AssociatedCluster[nr][nc] < 0 ) {	  
 	// NEW CLUSTER!	
 	if (ClusterCounter == MAXNUMCLUSTS) {
 	  cout << "\nNumber of clusters in event exceeded maximum ( " << MAXNUMCLUSTS
@@ -281,7 +340,7 @@ Int_t TDetector::FindClusters() {
 	  OverMaxClusts = kTRUE;
 	  break;
 	}	
-	fAllClusts[ClusterCounter] = new TCluster(fSignalMatrix, OverThresh, AssociatedCluster, ClusterCounter, i, j, fPixScanRange);  
+	fAllClusts[ClusterCounter] = new TCluster(fSignalMatrix, OverThresh, AssociatedCluster, ClusterCounter, nr, nc, fPixScanRange);  
 	if(fAllClusts[ClusterCounter]->fClusterSize <MINCLUSIZE) {
 	//if(fAllClusts[ClusterCounter]->fClusterSize <1) {
 	  delete fAllClusts[ClusterCounter];
@@ -309,20 +368,20 @@ Int_t TDetector::FindClusters() {
   // Loop over all clusters to evaluate the pixel with the highest charge IN THE EVENT
   // (and not in the clusters themselves).
   Float_t HighestEvtCharge = 0.0;
-  Float_t HighestEvtSize = 0.0;
-  Int_t HighestCluIndex = 0;
-  for (i=0; i<ClusterCounter; i++){
+  // Float_t HighestEvtSize = 0.0;
+  //Int_t HighestCluIndex = 0;
+  for (int i=0; i<ClusterCounter; i++){
     if (fAllClusts[i]->fHighestCharge > HighestEvtCharge)  {
       //HighestEvtCharge = fAllClusts[i]->fPulseHeight;
       HighestEvtCharge = fAllClusts[i]->fHighestCharge;
-      HighestEvtSize  = fAllClusts[i]->fClusterSize;
-      HighestCluIndex = i;
+      //HighestEvtSize  = fAllClusts[i]->fClusterSize;
+      //HighestCluIndex = i;
     }
   }
 
   // Second loop over the clusters; the highest charge for each cluster is set to the highest
   // charge IN THE EVENT. Necessary for the event display normalization.
-  for (i=0; i<ClusterCounter; i++){
+  for (int i=0; i<ClusterCounter; i++){
     fAllClusts[i]->fHighestCharge = HighestEvtCharge;
   }
   return (ClusterCounter);

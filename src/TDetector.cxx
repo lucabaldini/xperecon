@@ -110,7 +110,7 @@ int TDetector::FitsToPixmap(string fitsname) {
     fits_get_num_rows(fptr, &ntrows, &status);
   
     int I[ntrows], J[ntrows];
-    float X[ntrows], Y[ntrows];
+    //float X[ntrows], Y[ntrows];
 
     fits_read_col(fptr, TINT, 1, 1, 1, ntrows, NULL, J, NULL, &status);
     fits_read_col(fptr, TINT, 2, 1, 1, ntrows, NULL, I, NULL, &status);
@@ -270,7 +270,7 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
 	 chan = fPixMap[nr][nc];
 	 fRawChannelData[chan] = COMB(tmp1,tmp2);
 	 fPedSubtrSignal[chan] = fRawChannelData[chan];
-	 fROIRawData[wch] = -1.*fPedSubtrSignal[chan];
+	 fROIRawData[wch] = fPedSubtrSignal[chan];
 	 if (fROIRawData[wch] > fPixelThresh) pixel_counter++;  // count pixel over threshold for cumulative map!!!
        }
      }

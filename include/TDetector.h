@@ -38,6 +38,7 @@ class TDetector {
   Int_t    DigiCharge[1000];
   Double_t Phi;
   Double_t XI, YI; 
+  float X[NCHANS], Y[NCHANS];
   Int_t Roi[4], numPix;    
   Float_t thr;
   UShort_t time1, time2;

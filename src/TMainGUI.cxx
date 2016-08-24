@@ -164,7 +164,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   MapWindow();
   Move(100,10);
  
-  fCumulativeHitmapCanvas = 0;
+  //fCumulativeHitmapCanvas = 0;
   fCumulativeHitmapHisto = 0;
   fCumulativeHitmapCanvas2D = 0;
 }
@@ -472,7 +472,7 @@ void TMainGUI::DataAnalysis()
 	if (RTFlag&&nev) WriteEventsTree();
 	WriteClusterTree(rootFile);
 	if (RawFlag&&NewDataFlag&&nev) WriteRawSignalTree();
-	//if(nev)DrawCumulativeHitMap(nev);
+	if(nev)DrawCumulativeHitMap(nev);
 
 	CloseFiles();	   
 	 
@@ -719,12 +719,14 @@ void TMainGUI::SaveRawSignal(Int_t nev) {
 void TMainGUI::DrawCumulativeHitMap(Int_t nev){  
   // Display cumulative Hitmap!
   Float_t DeathThreshold = nev/10.0;
+  /*
   if(fCumulativeHitmapCanvas>0){
     delete fCumulativeHitmapCanvas;
     fCumulativeHitmapCanvas = 0;
   }
   if(!fCumulativeHitmapCanvas)fCumulativeHitmapCanvas = new TCanvas("Cumulative Hitmap", " Cumulative Hitmap", 900, 10, 1000, 500);
   fCumulativeHitmapCanvas->SetFillColor(10);
+  */
 
   if(fCumulativeHitmapHisto>0){
     delete fCumulativeHitmapHisto;
@@ -736,8 +738,8 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
     fCumulativeHitmapHisto->SetBinContent(ch+1, Polarimeter->fCumulativeHitmap[ch]);
     if (Polarimeter->fCumulativeHitmap[ch]>MaxHitmap) MaxHitmap = Polarimeter->fCumulativeHitmap[ch];
   }
-  fCumulativeHitmapHisto->Draw(); 
-  fCumulativeHitmapCanvas->Update();
+  //fCumulativeHitmapHisto->Draw(); 
+  //fCumulativeHitmapCanvas->Update();
 
   if(fCumulativeHitmapCanvas2D>0){
     delete fCumulativeHitmapCanvas2D;
@@ -745,28 +747,17 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
   }
   if(!fCumulativeHitmapCanvas2D)fCumulativeHitmapCanvas2D = new TCanvas("Cumulative Hitmap 2D", " Cumulative Hitmap 2D", 900, 200, 700, 700);
   fCumulativeHitmapCanvas2D->SetFillColor(10);
-  ifstream PxFile;
-  PxFile.open("pixmap.dat", ios::in);
+
   PixelHit pix;
   THexagonCol *hexagon;
-  Int_t DummyInt;
-  Char_t DummyChar[10];
-  Bool_t Border;
   Int_t MediumX, MediumY;
-  PxFile >> MediumX >> MediumY;
-  gPad->Range(-MediumY*PITCH, -MediumY*PITCH, MediumY*PITCH, MediumY*PITCH);
-  for(Int_t k=0;k<7;k++)PxFile >> DummyChar;
+  MediumX = PIX_R_DIM;
+  MediumY = PIX_C_DIM;
+  gPad->Range(-MediumX*PITCH, -MediumY*PITCH, MediumX*PITCH, MediumY*PITCH);
+
   for (Int_t ch=0; ch<NCHANS; ch++){
-    PxFile >> pix.X;
-    PxFile >> pix.Y;
-    PxFile >> DummyInt >> DummyInt >> DummyInt >> DummyInt >> Border;
-    // If the pixel is on the border, draw a red hexagon, full scale!
-    if (Border){
-      pix.Height = PITCH/2;
-      hexagon = new THexagonCol(pix);
-      hexagon->DrawEmpty(kRed);
-      delete hexagon;
-    }
+    pix.X = Polarimeter->X[ch];
+    pix.Y = Polarimeter->Y[ch];
     if (Polarimeter->fCumulativeHitmap[ch] > DeathThreshold){
       pix.Height = Polarimeter->fCumulativeHitmap[ch]/MaxHitmap*PITCH/2;
       hexagon = new THexagonCol(pix);
@@ -775,7 +766,6 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
     }
   }
   fCumulativeHitmapCanvas2D->Update();
-  PxFile.close();
   return;
 }
 

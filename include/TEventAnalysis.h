@@ -22,9 +22,7 @@ class TEventAnalysis {
   TGFileInfo fi;
   TList       *dataflist;
   TFile       *DataAnalizedFile, *RawSignalFile, *EventsFile;
-  TInputFile  *PixFileName, *RawFileName;
-  Double_t    fW1, fW2, fW3, fThresholdBuf;
-  bool        fCheck1;
+  TInputFile  *RawFileName;
   Float_t     Weight, SmallRadius, WideRadius, fPixelThreshold;
   TString     fEvData1;
   TString     DataName;
@@ -33,7 +31,8 @@ class TEventAnalysis {
   Int_t       Rcounter;
   Int_t       Nevent;
   Int_t       Clusterdim;
-  Int_t       FFflag, RTFlag, RawFlag, MCflag, NewDataFlag; 
+  //Int_t       FFflag;
+  Int_t       RTFlag, RawFlag, MCflag, NewDataFlag, ThfixFlag; 
   UInt_t      fRunId;
   Int_t       fEventId;
   Int_t       fNClusters, fTrigWindow, fbufferId;
@@ -45,7 +44,7 @@ class TEventAnalysis {
   TStopwatch  timer2;
   TDetector   *Polarimeter;
   Float_t     W1, W2, W3;
-  Int_t       W4;
+  Int_t       W4, W5;
   bool        W6, W7;
   Double_t    Phi;
   Int_t       Channel[MAXCLUSIZE];

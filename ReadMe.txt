@@ -27,10 +27,18 @@ Arguments:
 The output data are saved in a root file (in the same directory of the input file) with name:
      inputfilename_THxx__outputfile.root (xx is the value of the threshold).
 
-EXAMPLE: ./Pixy -b filelist.txt
+EXAMPLE: ./Pixy -b datafiles.list nEvents
 
- 
+It starts reading the config.dat file to load user's configuration parameters and, if any, overwrite the default values.
+Defaults:
 
+	SmallCircleRadius = 1.5
+	WideCircleRadius = 3.5
+	WeightLenghtScale = 0.05
+	PixelThreshold = 9  (fixed value in ADC counts or number of rms, according to the FixThrFlag setting)
+	FixThrFlag = 1   (0 - if rms from peds)
+
+---- ***************************************************************************************************** ----
 
 INTERACTIVE mode:
 USAGE: ./Pixy
@@ -46,11 +54,15 @@ How to use the 'Pixy Control Panel'
      Once the datafile has been selected, browsing through the filesystem, it must be set the number of events 
      in the file to to be analysed (from event number - to event number; All stands for "up to the end of file").
      For track reconstructio is necessary to set:
-
-     The Pixel Threshold (in ADC counts) - Default value: 9
+ 
+     The Pixel Threshold   -   Default value: 9
      The SmallCircleRadius -   Default value: 1.5
      The WideCircleRadius  -   Default value: 3.5	
      The WeightLenghtScale -   Default value: 0.05
+
+     Check "Fixed" button to apply the same theshold value, in ADC counts, to all pixels; uncheck it to apply a variable threshold to each pixel,
+     in "number" of sigmas of noise. Pedestal sigmas and means map is automatically loaded if "fixed" button is unchecked. (Sigmas and means 
+     are stored in a fitsfile).
 
      Check "Header On" for input data file from Roma DAQ system 
      Check "Save Raw Signal" to save raw data in RawSignals.root (to be done only for few events, in window mode)

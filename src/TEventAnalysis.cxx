@@ -25,6 +25,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   W2 = 3.5;    // WideCircleRadius
   W3 = 0.05;   // WeightLengthScale
   W4 = 9;      // PixelThreshold  
+  W5 = 1;      // FixThrFlag
   W6 = false;  // RawSignalSave
   W7 = false;  // FullFrameFlag
 
@@ -43,6 +44,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
     string w2("WideCircleRadius");
     string w3("WeightLengthScale");
     string w4("PixelThreshold");
+    string w5("FixThrFlag");
     string w6("RawSignalSave");
     string w7("FullFrameFlag");
     /* Read pars from input file */
@@ -59,7 +61,8 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
       if ( strstr(_param.c_str(), w2.c_str()) ) W2 = _val;
       if ( strstr(_param.c_str(), w3.c_str()) ) W3 = _val;
       if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
-      if ( strstr(_param.c_str(), w6.c_str()) ) W6 = _val;
+      if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
+      if ( strstr(_param.c_str(), w5.c_str()) ) W5 = _val;
       if ( strstr(_param.c_str(), w7.c_str()) ) W7 = _val;
     }
     _configfile.close();
@@ -103,7 +106,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 {
   Int_t totnev = 0, nev;
   TObjString *el;
-
+  int err;
   TList *_fileNamesList = NULL;
 
   if(dataflist->GetEntries()!=0) {
@@ -129,14 +132,14 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
   longEv = 0;
   Rcounter = 0;
   RTFlag = 0; // O = No EventsTree for MC analisys <<<<<<<<<<<<<============ 
-  FFflag = W7;
+  //FFflag = W7;
 
   if (RTFlag) InitializeEventsTree();
   SmallRadius  = W1; 
   WideRadius   = W2; 
   Weight       = W3;       
   fPixelThreshold = W4;
-  
+  ThfixFlag = W5;
   rootExt += W4;   
   rootExt += "_outputfile";
   rootExt += ".root";
@@ -169,13 +172,14 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
  
       if (DataName.Contains(".root")) MCflag = 1;        // MonteCarlo data
       if (DataName.Contains(".mdat")) NewDataFlag = 1;   // ROI data from new chip3 (Still not ped subtracted)
-      if (DataName.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
+      //if (DataName.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
  
       infofile.open(infofilename, ios::out);
-      infofile << "SmallCircleRadius: " << SmallRadius << endl;
+      infofile << "SmallRadius: " << SmallRadius << endl;
       infofile << "WideCircleRadius:  " << WideRadius << endl;
       infofile << "WeightLengthScale: " << Weight << endl;
       infofile << "PixelThreshold:    " << fPixelThreshold << endl;
+      infofile << "FixThrFlag:        " << ThfixFlag << endl;
       infofile << "RawSignalSave:     " << RawFlag << endl;
       infofile.close();
 
@@ -203,11 +207,11 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
 	  Polarimeter->fPixelThresh = fPixelThreshold;
+	  Polarimeter->fThreshFlag = 1;
 	  nev = 0;
 	  for ( Int_t i=startEv; i<=stopEv; i++ ) {
 	    f->cd();
 	    nev++;
-	    gSystem->ProcessEvents(); //Added 29-01-08
 	    if ( !((i-startEv)%1000) ) 
 	      if (VLEVEL >= 0) 
 		cout << "[" << _progName << " - RUNNING] ========>>> Analized " << i-startEv << " MC events" << endl;
@@ -232,6 +236,14 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
 	  Polarimeter->fPixelThresh = fPixelThreshold;
+	  Polarimeter->fThreshFlag = ThfixFlag;
+	  if(!ThfixFlag){
+	    err = Polarimeter->ReadRMS();
+	    if(err) {
+	      cout << "=====> ERROR in reading PEDFITS file!!!! - EXIT! " << endl;
+	      return;
+	    }
+	  }
 	  nev = 0;
 	  totnev = 0;
 	   
@@ -250,8 +262,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t NEVTS)
 	    if (stopEv && totnev == stopEv+1) break;
 	    nev++;
 	    totnev++;
-	    // gSystem->ProcessEvents(); //Added 29-01-08 FS- //!! BATCH!
-	     
 	    eofdata =  Polarimeter->ReadROInew(totnev);
 	     
 	    if(eofdata == 1) {
@@ -524,6 +534,7 @@ void TEventAnalysis::WriteEventsTree(){
   delete EventsFile;
   return;
 }
+
 
 /*
 void TEventAnalysis::DrawCumulativeHitMap(Int_t nev){  

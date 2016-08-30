@@ -13,6 +13,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
     infofilein >> W2 >> W2;
     infofilein >> W3 >> W3;
     infofilein >> W4 >> W4; 
+    infofilein >> W5 >> W5; 
     infofilein >> W6 >> W6;
   }
   else { // default conditions
@@ -20,6 +21,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
     W2 = "3.5";  // Wide Radius
     W3 = "0.05"; // Weight
     W4 = "11";   // Threshold  
+    W5 = "0";    // Fixed Thr. Flag
     W6 = "0";    // Raw signal Flag
   }
 
@@ -100,16 +102,31 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   fDataFrame->AddFrame(fHeadToFile,new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
 
   fDataThresholdFrame = new TGCompositeFrame(fDataFrame, 150, 150, kHorizontalFrame);
-  fDataThresholdLabel = new TGLabel(fDataThresholdFrame, new TGString("Pixel Thresh. (ADC cnts.)"));
+  
+  fThfix = new TGCheckButton(fDataThresholdFrame, "Fixed", THFIX);
+  fThfix->Associate(this);
+  if (atoi(W5) ) {
+    fThfix->SetState(kButtonDown);
+    ThfixFlag = 1;
+  
+  }
+  else {
+    fThfix->SetState(kButtonUp);
+    ThfixFlag = 0;
+
+  }
+
+  fDataThresholdFrame->AddFrame(fThfix, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
+
+  fDataThresholdLabel = new TGLabel(fDataThresholdFrame, new TGString("Pixel Thresh."));
   fDataThresholdFrame->AddFrame(fDataThresholdLabel, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
-  fDataThresholdEntry = new TGTextEntry(fDataThresholdFrame, fThresholdBuf = new TGTextBuffer(80));
+  fDataThresholdEntry = new TGTextEntry(fDataThresholdFrame, fThresholdBuf = new TGTextBuffer(40));
   fThresholdBuf->AddText(0,W4);
   fDataThresholdEntry->SetToolTipText("Insert the threshold for noise rejection (number of STDs)");
   fDataThresholdFrame->AddFrame(fDataThresholdEntry, new TGLayoutHints(kLHintsExpandX | kLHintsTop, 4, 4, 4, 4));
-
   fDataFrame->AddFrame(fDataThresholdFrame, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0));
-  
-  fDataFrame->AddFrame(fCheck1 = new TGCheckButton(fDataFrame, "Save Raw Signal", CHKRAW), fButtonLayout );
+ 
+  fDataFrame->AddFrame(fCheck1 = new TGCheckButton(fDataFrame, "Save Raw Signal", CHKRAW),new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
   fCheck1->Associate(this);
   if (atoi(W6) ) {
     fCheck1->SetState(kButtonDown);
@@ -163,9 +180,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   Resize(550, 450);
   MapWindow();
   Move(100,10);
- 
-  //fCumulativeHitmapCanvas = 0;
-  fCumulativeHitmapHisto = 0;
+  
   fCumulativeHitmapCanvas2D = 0;
 }
 
@@ -213,6 +228,18 @@ Bool_t TMainGUI::ProcessMessage(Long_t msg, Long_t par1, Long_t){
   if (GET_MSG(msg) == kC_COMMAND) {
     if (GET_SUBMSG(msg) == kCM_BUTTON || GET_SUBMSG(msg) == kCM_CHECKBUTTON ) {
       switch(par1) {
+
+      case THFIX:
+	if (fThfix->GetState()) {
+	  ThfixFlag = 1;
+	  cout << "===> Pixels Threshold: FIXED (ADC counts)" << endl;
+	}
+	else {
+	  ThfixFlag = 0;
+	  cout << "===> Pixels Threshold: VARIABLE (N sigmas)" << endl;
+	}
+	break;
+
       case HEADON:
 	if (fHeadToFile->GetState()){
 	  HeaderOn = true;
@@ -309,13 +336,15 @@ void TMainGUI::DataAnalysis()
   TString rootExt = "_TH";
   Int_t size;
   string mapName;
+  int err;
+
   cout << "=====> START ANALYSIS!!!!! " << endl;
   DataPanelDisable();
   eofdata = 0;
   longEv = 0;
   Rcounter = 0;
   RTFlag = 0; // O = No EventsTree for MC analisys <<<<<<<<<<<<<============ 
-  FFflag = atoi(W7);
+  //FFflag = atoi(W7);
 
   if (RTFlag) InitializeEventsTree();
   SmallRadius  = atof(fW1->GetString());
@@ -330,6 +359,8 @@ void TMainGUI::DataAnalysis()
   startEv = atoi(fEvData->GetString());
 
   RawFlag = fCheck1->GetState();
+  ThfixFlag = fThfix->GetState();
+
   gSystem->ChangeDirectory(workingdir);
   if ((!gSystem->AccessPathName("RawSignals.root", kFileExists)) && (!RawFlag)) 
     gSystem->Rename("RawSignals.root","RawSignals_old.root");
@@ -341,7 +372,7 @@ void TMainGUI::DataAnalysis()
     size = DataName.Length();
     rootFile = DataName;	
     rootFile.Replace(size-5,rootExt.Length(),rootExt);
-    cout << "\nInput file       --> " << DataName << endl;
+    cout << "Input file        --> " << DataName << endl;
     cout << "Clusters saved in --> " << rootFile << endl;
 
     //Need to extract Run Number and write in output.
@@ -353,13 +384,14 @@ void TMainGUI::DataAnalysis()
  
       if (DataName.Contains(".root")) MCflag = 1;        // MonteCarlo data
       if (DataName.Contains(".mdat")) NewDataFlag = 1;   // ROI data from new chip3 (Still not ped subtracted)
-      if (DataName.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
+      //if (DataName.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
  
       infofile.open("info.dat",ios::out);
       infofile << "SmallRadius: " << SmallRadius << endl;
       infofile << "WideRadius: " << WideRadius << endl;
       infofile << "Weight: " << Weight << endl;
       infofile << "Threshold: " << fPixelThreshold << endl;
+      infofile << "FixThrFlag: " << ThfixFlag << endl;
       infofile << "RawDataFlg: " << RawFlag << endl;
       infofile.close();
        
@@ -381,11 +413,12 @@ void TMainGUI::DataAnalysis()
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
 	  Polarimeter->fPixelThresh = fPixelThreshold;
+	  Polarimeter->fPixelThresh = 1;
 	  nev = 0;
 	  for (Int_t i=startEv; i<=stopEv; i++) {
 	    f->cd();
 	    nev++;
-	    gSystem->ProcessEvents(); //Added 29-01-08
+	    gSystem->ProcessEvents(); 
 	    if (!((i-startEv)%1000)) cout << "========>>> Analized " << i-startEv << " MC events" << endl;
 	    eofdata = Polarimeter->ReadMCFile(i);
 	    Int_t NbClusters = Polarimeter->FindClusters();
@@ -405,6 +438,14 @@ void TMainGUI::DataAnalysis()
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
 	  Polarimeter->fPixelThresh = fPixelThreshold;
+	  Polarimeter->fThreshFlag = ThfixFlag;
+	  if(!ThfixFlag){
+	    err = Polarimeter->ReadRMS();
+	    if(err) {
+	      cout << "=====> ERROR in reading PEDFITS file!!!! - EXIT! " << endl;
+	      return;
+	    }
+	  }
 	  nev = 0;
 	  totnev = 0;
 	   
@@ -720,14 +761,6 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
   // Display cumulative Hitmap!
   Float_t DeathThreshold = nev/10.0;
   /*
-  if(fCumulativeHitmapCanvas>0){
-    delete fCumulativeHitmapCanvas;
-    fCumulativeHitmapCanvas = 0;
-  }
-  if(!fCumulativeHitmapCanvas)fCumulativeHitmapCanvas = new TCanvas("Cumulative Hitmap", " Cumulative Hitmap", 900, 10, 1000, 500);
-  fCumulativeHitmapCanvas->SetFillColor(10);
-  */
-
   if(fCumulativeHitmapHisto>0){
     delete fCumulativeHitmapHisto;
     fCumulativeHitmapHisto = 0;
@@ -738,9 +771,7 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
     fCumulativeHitmapHisto->SetBinContent(ch+1, Polarimeter->fCumulativeHitmap[ch]);
     if (Polarimeter->fCumulativeHitmap[ch]>MaxHitmap) MaxHitmap = Polarimeter->fCumulativeHitmap[ch];
   }
-  //fCumulativeHitmapHisto->Draw(); 
-  //fCumulativeHitmapCanvas->Update();
-
+  */
   if(fCumulativeHitmapCanvas2D>0){
     delete fCumulativeHitmapCanvas2D;
     fCumulativeHitmapCanvas2D = 0;
@@ -759,7 +790,7 @@ void TMainGUI::DrawCumulativeHitMap(Int_t nev){
     pix.X = Polarimeter->X[ch];
     pix.Y = Polarimeter->Y[ch];
     if (Polarimeter->fCumulativeHitmap[ch] > DeathThreshold){
-      pix.Height = Polarimeter->fCumulativeHitmap[ch]/MaxHitmap*PITCH/2;
+      pix.Height = PITCH/2;
       hexagon = new THexagonCol(pix);
       hexagon->DrawEmpty(kBlack);
       delete hexagon;

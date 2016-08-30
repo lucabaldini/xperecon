@@ -156,11 +156,11 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
 
   fThrAmpLow = new TGTextEntry(fHSignalCutFrame, fThrLow = new TGTextBuffer(10));
   fThrLow->AddText(0,fSignalLow);
-  fThrAmpLow->SetState(false);
+  //fThrAmpLow->SetState(false);
   fSignalLabel = new TGLabel(fHSignalCutFrame, new TGString("Signal/Noise"));
   fThrAmpHigh = new TGTextEntry(fHSignalCutFrame, fThrHigh = new TGTextBuffer(10));
   fThrHigh->AddText(0,fSignalHigh);
-  fThrAmpHigh->SetState(false);
+  //fThrAmpHigh->SetState(false);
 
   fThrSizeLow = new TGTextEntry(fHSizeCutFrame, fSizeCutLow = new TGTextBuffer(10));
   fSizeCutLow->AddText(0,fCluSizeLow);

@@ -103,7 +103,7 @@ typedef Float_t MatrixFloat_t[PIX_R_DIM] [PIX_C_DIM];
 typedef Int_t MatrixInt_t[PIX_R_DIM][PIX_C_DIM];
 typedef UShort_t MatrixUshort_t[PIX_R_DIM][PIX_C_DIM];
 
-enum {HEADON, FILE_OPEN, WEXIT, SEL_EV, SLIDER_EV,   
+enum {HEADON, THFIX, FILE_OPEN, WEXIT, SEL_EV, SLIDER_EV,   
       OR, AND, ABOUT, UPDATEPED, UPDATEDATA,
       CHKRAW, WLEN, BLUE, RED, NUMEV};
 

@@ -2,19 +2,6 @@
 #include <fitsio.h>
 #define PAR 1
 
-TDetector::TDetector(TInputFile *fPix, TTree *tree) { 
-  Evtree = tree;
-  Evtree->SetBranchAddress("Clusterdim",&Clusterdim);
-  Evtree->SetBranchAddress("Channel",Channel);
-  Evtree->SetBranchAddress("DigiCharge",DigiCharge);
-  Evtree->SetBranchAddress("InitialPhi",&Phi);
-  Evtree->SetBranchAddress("XInitial",&XI);
-  Evtree->SetBranchAddress("YInitial",&YI);
-  fPixFile = fPix;
-  CreatePixLookup();
-  MCflag = 1;
-}
- 
 TDetector::TDetector(string pixmap,TTree *tree) { 
   Evtree = tree;
   Evtree->SetBranchAddress("Clusterdim",&Clusterdim);
@@ -23,69 +10,26 @@ TDetector::TDetector(string pixmap,TTree *tree) {
   Evtree->SetBranchAddress("InitialPhi",&Phi);
   Evtree->SetBranchAddress("XInitial",&XI);
   Evtree->SetBranchAddress("YInitial",&YI);
+  // Read pixelmap 
   FitsToPixmap(pixmap);
   MCflag = 1;
 }
 
 
-TDetector::TDetector(TInputFile *fPix, TInputFile *fRaw){
-  // Make the member variable pointers fRawFile, etc. point to the various
-  // file objects.
-  fPixFile = fPix;
-  fRawFile = fRaw;
-  ifstream gainfile;
-  // Read in and create the pixel lookup table.
-  CreatePixLookup();
-  // Reset the cumulative Hitmap
-  for (Int_t i=0; i<NCHANS; i++) fCumulativeHitmap[i] = 0;
-  MCflag = 0;
-  roll = 0;
-  tm.clear();
-  }
-
 TDetector::TDetector(string pixmap, TInputFile *fRaw){
   fRawFile = fRaw;
-  ifstream gainfile;
-  // Read in and create the pixel lookup table.
-  FitsToPixmap(pixmap);
-    // Reset the cumulative Hitmap
+  ifstream gainfile; 
+  for (int nr=0; nr<PIX_R_DIM; ++nr) 
+     for (int nc=0; nc<PIX_C_DIM; ++nc)fNoiseMatrix[nr][nc] = 0;
+  // Reset the cumulative Hitmap
   for (Int_t i=0; i<NCHANS; i++) fCumulativeHitmap[i] = 0;
+  // Read pixelmap 
+  FitsToPixmap(pixmap);
   MCflag = 0;
   roll = 0;
   tm.clear();
   }
 
-void TDetector::CreatePixLookup() {
-  Text_t DummyString[ 8 ];
-  Int_t DummyInt;
-  Int_t nc, nr;
-  Float_t x,y;
-  // Loop over all pixels, reading in the corresponding ADC channel number
-  // and mask state from the file.  The first 2 entries on each line of the
-  // file are the pixel coordinates - skip these.
-  for (nr=0; nr< PIX_R_DIM; nr++)
-    {
-      for (nc=0; nc< PIX_C_DIM; nc++)
-	{
-	  fPixMap[nr][nc] = -1;
-	  fPixMask[nr][nc] = 0;
-	  fBorderPixel[nr][nc] = 0; 
-	} 
-    }
-  for (int i=0; i<2; i++) {
-    fPixFile->fStream >> DummyInt;  // Skip file header.
-  }
-
-  for (int i=0; i<7; ++i) {
-    fPixFile->fStream >> DummyString;  // Skip file header.
-  }
-  while(!fPixFile->fStream.eof()) {
-    fPixFile->fStream >> x >> y >> nr >> nc;
-    fPixFile->fStream >> fPixMap[nr][nc] >> fPixMask[nr][nc] >> fBorderPixel[nr][nc];
-    PixToCartX[nr][nc] = x; 
-    PixToCartY[nr][nc] = y; 
-  }
-}
 
 int TDetector::FitsToPixmap(string fitsname) {
   Int_t nr, nc;
@@ -125,12 +69,66 @@ int TDetector::FitsToPixmap(string fitsname) {
       PixToCartX[nr][nc] = X[ch]; 
       PixToCartY[nr][nc] = Y[ch]; 
     } 
-    if (status == END_OF_FILE)  status = 0; /* Reset after normal error */
+    if (status == END_OF_FILE)  status = 0; 
     fits_close_file(fptr, &status);
   }
   return (status);
 }
 
+
+int TDetector::ReadRMS(){
+  //cout << "Creating pixel matrix" << endl;
+  fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
+  int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
+  char IMAGE[] = "PEDRMS";
+  int ii, chan, naxis;
+  long *naxes = nullptr, nelements;
+  int anynul; 
+  long *fpixel = nullptr;
+  string fitsname = "pedsmap.fits";
+
+  // READ PEDS FITS FILE WITH RMS AND AVERAGES
+  for (int i=0; i<NCHANS; ++i) fSigma[i] = 1;
+  if (!fits_open_file(&fptr, fitsname.c_str(), READONLY, &status)) {
+    fits_movnam_hdu(fptr, IMAGE_HDU, IMAGE,0, &status);
+    fits_get_img_dim(fptr, &naxis, &status);
+    naxes = (long*) malloc(naxis);
+    fits_get_img_size(fptr, naxis, naxes, &status);
+
+     // Compute the total number of elements
+    nelements = 1;
+    for (ii = 0; ii < naxis; ++ii){
+      nelements *= naxes[ii];
+    }
+    if(nelements!=NCHANS) {
+      free(naxes);
+      return 1;
+    }
+    fpixel = (long*) malloc (naxis);
+    for (ii = 0; ii < naxis; ++ii){
+      fpixel[ii] = 1;
+    }
+  
+    fits_read_pix(fptr, TSHORT, fpixel, nelements, NULL, fSigma, &anynul, &status);
+    
+    // Put the rms noise data and pedestal data into a pixel matrix.
+    for (int nr=0; nr<PIX_R_DIM; ++nr) {
+      for (int nc=0; nc<PIX_C_DIM; ++nc) {
+	fNoiseMatrix[nr][nc] = 0;
+	if (fPixMap[nr][nc] > -1){
+	  chan = fPixMap[nr][nc];               
+	  fNoiseMatrix[nr][nc] = fSigma[chan];  
+	}
+    }
+    }
+    
+    if (status == END_OF_FILE)  status = 0; 
+    fits_close_file(fptr, &status);
+  }
+  free(naxes);
+  free(fpixel);
+  return (status);
+}
 
 Int_t TDetector::ReadMCFile(Int_t entry){
   for (int j=0; j<NCHANS; ++j) fPedSubtrSignal[j] = 0;
@@ -286,8 +284,12 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
   for (int nr=0; nr<PIX_R_DIM; ++nr) {
     for (int nc=0; nc<PIX_C_DIM; ++nc) {
       chan = fPixMap[nr][nc]; 
-      fSignalMatrix[nr][nc] = fPixMask[nr][nc]*fPedSubtrSignal[chan]; // No inverted signal with new DAQ!!!!
-      if (fSignalMatrix[nr][nc] > fPixelThresh  && pixel_counter < MAXCLUSIZE){
+      fSignalMatrix[nr][nc] = fPixMask[nr][nc]*fPedSubtrSignal[chan]; 
+
+      if (fThreshFlag) thr = fPixelThresh;
+      else thr = fPixelThresh*fSigma[chan];
+
+      if (fSignalMatrix[nr][nc] > thr  && pixel_counter < MAXCLUSIZE){
 	fCumulativeHitmap[chan] += fSignalMatrix[nr][nc];
        }
     }
@@ -321,7 +323,10 @@ Int_t TDetector::FindClusters() {
 	else OverThresh[nr][nc] = 0;
       }
       else {
-	if (fSignalMatrix[nr][nc] > fPixelThresh)  OverThresh[nr][nc] = 1;
+	if (fThreshFlag) thr = fPixelThresh;
+	else thr = fPixelThresh*fNoiseMatrix[nr][nc];
+
+	if (fSignalMatrix[nr][nc] > thr)  OverThresh[nr][nc] = 1;
 	else OverThresh[nr][nc] = 0;
       }
     }

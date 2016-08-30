@@ -30,10 +30,8 @@ class TMainGUI: public TGMainFrame{
   TGLabel          *fTitleWeight, *fTitleSradius, *fTitleWradius;
  
   TCanvas          *fHistosCanvas, *Canvas, *Canvas1, *Canvas0;
-  TCanvas          *fCumulativeHitmapCanvas;
   TCanvas          *fCumulativeHitmapCanvas2D;
-  TH1F             *fCumulativeHitmapHisto;
- 
+  
   TGGroupFrame     *fDataFrame;
   TGCompositeFrame *fMainFrameVert, *fMainFrameHor;
   TGCompositeFrame *fRightFrame, *fLeftFrame;
@@ -129,7 +127,7 @@ class TMainGUI: public TGMainFrame{
   Int_t MCflag;
   Int_t RawFlag;
   Int_t NewDataFlag;
-  Int_t FFflag; 
+  //Int_t FFflag; 
   Float_t Weight, SmallRadius, WideRadius;
 
 

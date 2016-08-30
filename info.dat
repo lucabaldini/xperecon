@@ -1,5 +1,6 @@
 SmallRadius: 1.7
-WideRadius: 3.5
-Weight: 0.05
-Threshold: 8
-RawDataFlg: 3
+WideCircleRadius:  3.5
+WeightLengthScale: 0.05
+PixelThreshold:    8
+FixThrFlag:        1
+RawSignalSave:     0

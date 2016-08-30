@@ -1,2 +1,3 @@
 SmallCircleRadius:  1.7
 PixelThreshold  8
+FixThrFlag: 1

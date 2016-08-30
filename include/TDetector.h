@@ -12,7 +12,6 @@ class TDetector {
 
  private:
 
-  TInputFile *fPixFile;
   TTree *Evtree;
   MatrixUshort_t fPixMask;
   MatrixUshort_t fBorderPixel;
@@ -40,7 +39,6 @@ class TDetector {
   Double_t XI, YI; 
   float X[NCHANS], Y[NCHANS];
   Int_t Roi[4], numPix;    
-  Float_t thr;
   UShort_t time1, time2;
   UShort_t run1, run2;
   ULong64_t timetick;
@@ -53,20 +51,20 @@ class TDetector {
   Float_t fROIRawData[maxPixTrasm];
   Float_t fPedSubtrSignal[NCHANS];
   Double_t fCumulativeHitmap[NCHANS];
-  Double_t fSigma[NCHANS];
-  Float_t fPixelThresh;
+  short fSigma[NCHANS];
+  //Double_t fSigma[NCHANS];
+  //Double_t fPeds[NCHANS];
+  Float_t fPixelThresh, thr;
+  Int_t fThreshFlag;
   Float_t fGainNormalization[NCHANS];
   Float_t fRawData[NCHANS];
   Bool_t HeaderInFile;
   TCluster *fAllClusts[MAXNUMCLUSTS];
 
- 
-  TDetector(TInputFile*, TInputFile*);
   TDetector(string fitsname, TInputFile*);
-  TDetector(TInputFile*,TTree*);
   TDetector(string fitsname,TTree*);
-  void CreatePixLookup();
-  int FitsToPixmap(string fitsname);
+  int FitsToPixmap(string fname);
+  int ReadRMS();
   Int_t ReadMCFile(Int_t);
   Int_t ReadROInew(Int_t); // for new data stream (window mode) with timestamp et al. 
   Int_t FindClusters();

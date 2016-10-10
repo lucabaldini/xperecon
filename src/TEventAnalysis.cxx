@@ -29,7 +29,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   W6 = false;  // RawSignalSave
   W7 = false;  // FullFrameFlag
 
-  //cout << "before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W6 << ' ' << W7 << endl;
+  //cout << "before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
   /* Read config file and overwrite defaults if any */
   if ((gSystem->AccessPathName(configfilename, kFileExists))) 
     if (VLEVEL >= 0) 
@@ -61,13 +61,13 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
       if ( strstr(_param.c_str(), w2.c_str()) ) W2 = _val;
       if ( strstr(_param.c_str(), w3.c_str()) ) W3 = _val;
       if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
-      if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
       if ( strstr(_param.c_str(), w5.c_str()) ) W5 = _val;
+      if ( strstr(_param.c_str(), w6.c_str()) ) W6 = _val;
       if ( strstr(_param.c_str(), w7.c_str()) ) W7 = _val;
     }
     _configfile.close();
   }
-  //cout << "after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W6 << ' ' << W7 << endl;
+  //cout << "after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
 
   /* Get input files */
   if (VLEVEL >= 0) 

@@ -8,20 +8,21 @@ THexagonCol::THexagonCol(PixelHit fHits ) {
   Size = fHits.Height;
 
   // Find Hexagon vertex points
-  x[0] = ( HitX + Size*0.5 );
-  y[0] = ( HitY + Size*0.8660254 );
-  x[1] = ( HitX + Size );
-  y[1] = ( HitY );
-  x[2] = ( HitX + Size*0.5 );
-  y[2] = ( HitY - Size*0.8660254 );
-  x[3] = ( HitX - Size*0.5 );
-  y[3] = ( HitY - Size*0.8660254 );
-  x[4] = ( HitX - Size );
-  y[4] = ( HitY );
-  x[5] = ( HitX - Size*0.5 );
-  y[5] = ( HitY + Size*0.8660254 );  
-  x[6] = ( HitX + Size* 0.5 );
-  y[6] = ( HitY + Size* 0.8660254 );
+  x[0] = ( HitX );
+  y[0] = ( HitY + Size);
+  x[1] = ( HitX + Size*0.8660254 );
+  y[1] = ( HitY + Size*0.5 );
+  x[2] = ( HitX + Size*0.8660254 );
+  y[2] = ( HitY - Size*0.5);
+  x[3] = ( HitX );
+  y[3] = ( HitY - Size);
+  x[4] = ( HitX - Size*0.8660254 );
+  y[4] = ( HitY - Size*0.5);
+  x[5] = ( HitX - Size*0.8660254 );
+  y[5] = ( HitY + Size*0.5 );
+  x[6] = ( HitX );
+  y[6] = ( HitY + Size );
+
 }
 
 void THexagonCol::Draw(Color_t color) {

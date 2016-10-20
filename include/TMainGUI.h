@@ -8,10 +8,13 @@
 #include "TCluster_hex.h"
 #include "TEditor.h"
 #include "TStopwatch.h"
+#include "TEventAnalysis.h"
 
 class TMainGUI: public TGMainFrame{
  
  private:
+  Int_t            DebugLevel;
+  char*            progName;
   TGFileInfo fi;
   TString W1, W2, W3, W4, W5, W6, W7, W8;
   TTree            *fTree, *fRawTree, *tree;
@@ -20,6 +23,7 @@ class TMainGUI: public TGMainFrame{
   TDetector        *Polarimeter;
   TEventDisplay    *EventDisplay;
   Editor           *ed;
+  TEventAnalysis   *tEventAnalysis;
 
   const TGPicture  *fLogo;
   const TGPicture  *fFileSel;
@@ -148,8 +152,10 @@ class TMainGUI: public TGMainFrame{
 
  public:
 
-  TMainGUI(const TGWindow *p, UInt_t w, UInt_t h);
+  TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t, char*);
   virtual  ~TMainGUI();
+  inline void  SetProgParameters(Int_t VLEVEL, char* _name) {DebugLevel = VLEVEL; progName = _name;}
+  inline void  SetWorkingdir() {workingdir = gSystem->WorkingDirectory();}
   inline Int_t GetNchans() {return maxPixTrasm;}
   virtual Bool_t ProcessMessage(Long_t msg, Long_t par1, Long_t);
   virtual void CloseWindow();

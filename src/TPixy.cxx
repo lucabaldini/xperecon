@@ -10,7 +10,7 @@ enum STATUS {
 };
 
 int    VLEVEL;
-int    NEVTS;
+int    STARTEV, STOPEV;
 char*  DFNAME;
 bool   ISBATCH;
 
@@ -22,7 +22,6 @@ int GetUserOpt(int, char**);
 
 int main(int argc, char **argv) 
 {
-
 
   VLEVEL  = 0;
   ISBATCH = false;
@@ -37,13 +36,13 @@ int main(int argc, char **argv)
   if (ISBATCH) {
     /* Run Pixy in batch mode */ 
     gROOT->SetBatch();      
-    TEventAnalysis eventAnalysis(VLEVEL, argv[0], DFNAME, NEVTS);
+    TEventAnalysis eventAnalysis(VLEVEL, argv[0], DFNAME, STARTEV, STOPEV);
   }
 
   else {
     /* Interactive Pixy */
     TRint theApp( "Pixy", &argc, argv );
-    theGUI = new TMainGUI( gClient->GetRoot(), 520, 320 );
+    theGUI = new TMainGUI( gClient->GetRoot(), 520, 320, VLEVEL, argv[0] );
     theApp.Run();
     gSystem->ProcessEvents();
     return (0);
@@ -69,9 +68,12 @@ int GetUserOpt( int argc, char* argv[] )
   opt->addUsage( "" );
   opt->addUsage( "Arguments: " );
   opt->addUsage( "  dataFileList            Data files list" );
-  opt->addUsage( "  nEvents [default: ALL]  Max n. of event to be processed" );
+  opt->addUsage( "  firstEv [default: 0]    Start from this event in file" );
+  opt->addUsage( "  lastEv  [default: ALL]  Max n. of event to be processed" );
   opt->addUsage( "" );
-  opt->addUsage( "EXAMPLE: ./Pixy -b filelist.txt" );
+  opt->addUsage( "EXAMPLE: ./Pixy -b filelist.txt           Process all events in file list" );
+  opt->addUsage( "EXAMPLE: ./Pixy -b filelist.txt 0 100     Process the first 100 events in file list" );
+  opt->addUsage( "EXAMPLE: ./Pixy -b filelist.txt 100 100   Process only the 100th event in file list" );
 
   opt->setFlag( "help", 'h' );  
   opt->setOption( "verbose", 'v' );
@@ -100,13 +102,21 @@ int GetUserOpt( int argc, char* argv[] )
    
   switch ( opt->getArgc() ) {                 // get the actual arguments after the options
     
+  case 3: 
+    STOPEV  = atoi(opt->getArgv(2));          // get n. of last event
+    STARTEV = atoi(opt->getArgv(1));          // get n. of first event
+    DFNAME  = opt->getArgv(0);                // get data files list name
+    break;
+
   case 2: 
-    NEVTS   = atoi(opt->getArgv(1));          // get n. of events
+    STOPEV  = -999;
+    STARTEV = atoi(opt->getArgv(1));          // get n. of first event
     DFNAME  = opt->getArgv(0);                // get data files list name
     break;
     
   case 1: 
-    NEVTS  = -999;
+    STOPEV  = -999;
+    STARTEV = 0;
     DFNAME  = opt->getArgv(0);                // get data file name
     break;
     

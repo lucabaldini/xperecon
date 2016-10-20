@@ -14,18 +14,16 @@
 class TEventAnalysis {
 
  private:
-  TString     _progName;
-  TString     _workingDir;
-  ofstream    infofile;
-  TChain      datafchain;
-  TString     infofilename, configfilename, dataflistname;
-  TGFileInfo fi;
+  TString     progName;
+  TString     workingDir;
+  TString     outputDir;
+  TString     rootExt;
+  TGFileInfo  fi;
   TList       *dataflist;
   TFile       *DataAnalizedFile, *RawSignalFile, *EventsFile;
   TInputFile  *RawFileName;
   Float_t     Weight, SmallRadius, WideRadius, fPixelThreshold;
   TString     fEvData1;
-  TString     DataName;
   Int_t       nchans; 
   Int_t       eofdata, longEv;
   Int_t       Rcounter;
@@ -78,12 +76,15 @@ class TEventAnalysis {
 
 
  public:
-  TEventAnalysis(Int_t, char*, char*, Int_t);
+  TEventAnalysis(Int_t, char*, char*, Int_t, Int_t);
+  TEventAnalysis();
   virtual  ~TEventAnalysis();
   void Init(Int_t, char*, char*);
-  void  DataAnalysis(Int_t, Int_t);
-  inline void  SetProgName(char* _name) {_progName = _name;}
+  void  DataAnalysis(Int_t, Int_t, Int_t);
+  inline void  SetProgName(char* _name) {progName = _name;}
   inline Int_t GetNchans() {return maxPixTrasm;}
+  inline void SetDatafilesList(TList* _fileNamesList) {dataflist = _fileNamesList;}
+  inline void SetWorkingdir(TString _workingdir) {workingDir = _workingdir;}
   Int_t GetRunId(TString);
   void  InitializeRawSignalTree();
   void  InitializeClusterTree(TString);

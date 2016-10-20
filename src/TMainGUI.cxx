@@ -3,7 +3,8 @@
 
 bool sort_by_ph (TCluster* x, TCluster* y) { return (x->fPulseHeight > y->fPulseHeight); }
 
-TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
+TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t VLEVEL, char* _name):TGMainFrame(p, w, h){
+  /*
   ifstream infofilein;
   workingdir = gSystem->WorkingDirectory();
   cout <<"Working directory: =====>>> " <<  workingdir << endl;
@@ -22,10 +23,16 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
     W3 = "0.05"; // Weight
     W4 = "11";   // Threshold  
     W5 = "0";    // Fixed Thr. Flag
-    W6 = "0";    // Raw signal Flag
+    W6 = "0";    // Raw signal Flasg
   }
 
   W7 = "0"; // FullFrame Flag
+  */
+
+  SetProgParameters(VLEVEL, _name);
+  SetWorkingdir();
+  cout << "TMainGUI: setting VLEVEL=" << VLEVEL << " _name=" << _name << endl; 
+  cout << "TMainGUI: setting workingdir=" << workingdir << endl; 
 
   // Create layout for menubar and popup menus.	
   fMenuBarLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 1, 1);
@@ -74,6 +81,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p, w, h){
   fLeftFrame->AddFrame(fLogoImageMap, new TGLayoutHints(kLHintsCenterX | kLHintsCenterY));
 
   //------------------DATA------------------------------------------------------------------
+
   fAnalizeDataButton = new TGTextButton(fDataEvFrame, "Analyse data");
   fAnalizeDataButton->Connect("Clicked()","TMainGUI",this,"DataAnalysis()");
   fAnalizeDataButton->SetToolTipText("Press here to analize data");
@@ -309,7 +317,7 @@ void TMainGUI::DataSelect()
 /*! This function is supposed to retrive the Run number.
   Now from file name, assuming xpedaq convention, in the future from a db
   Some tricks to check if we are under Linux or Windows.
- */
+*/
 Int_t TMainGUI::GetRunId(TString RunIdName)
 {
   cout << "GetRunId:: RunId Name = " << RunIdName << " " << endl;
@@ -327,8 +335,32 @@ Int_t TMainGUI::GetRunId(TString RunIdName)
   return 0;// for now!!!
 }
 
+
 void TMainGUI::DataAnalysis()
 {
+  TList *_fileNamesList = fi.fFileNamesList;
+  if (DebugLevel >= 0) 
+    cout << "[" << progName << " - MESSAGE] Input files list:  " << fi.fFileNamesList << endl;
+  /*if ((gSystem->AccessPathName(dataflistname, kFileExists))) {
+    if (VLEVEL >= 0) 
+    cout << "[" << progName << " -   ERROR] No file selected." << endl;
+    exit(0);
+    }
+  */
+  
+  tEventAnalysis = new TEventAnalysis();
+  tEventAnalysis->SetDatafilesList(_fileNamesList);
+  tEventAnalysis->SetWorkingdir(workingdir);
+  tEventAnalysis->Init(DebugLevel, progName, NULL);
+  DataPanelDisable();
+  Int_t startEv = 0, stopEv = 0;
+  startEv = atoi(fEvData->GetString());
+  if (TString(fEvData1->GetString()) == "All") stopEv = -999;
+  else stopEv = atoi(fEvData1->GetString());
+
+  tEventAnalysis->DataAnalysis(DebugLevel, startEv, stopEv);   //// MODIFICARE ANCHE BATCH: NEVTS --> startEv, stopEv, NEVTS=stopEv-startEv
+
+  /*
   Int_t totnev = 0, nev;
   TObjString *el;
   TIter next(fi.fFileNamesList);
@@ -365,7 +397,6 @@ void TMainGUI::DataAnalysis()
   if ((!gSystem->AccessPathName("RawSignals.root", kFileExists)) && (!RawFlag)) 
     gSystem->Rename("RawSignals.root","RawSignals_old.root");
   
-
   //start LOOP on Input files!!!!!
   while ((el = (TObjString *) next())){
     DataName = el->GetString(); 
@@ -529,6 +560,7 @@ void TMainGUI::DataAnalysis()
     }
    
   } //END LOOP ON FILES!!!!
+  */
   DataPanelEnable();
   return;
 }

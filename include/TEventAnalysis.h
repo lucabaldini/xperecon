@@ -14,7 +14,8 @@
 class TEventAnalysis {
 
  private:
-  TString     progName;
+  //TString     progName;
+  char*       progName;
   TString     workingDir;
   TString     outputDir;
   TString     rootExt;
@@ -85,6 +86,7 @@ class TEventAnalysis {
   inline Int_t GetNchans() {return maxPixTrasm;}
   inline void SetDatafilesList(TList* _fileNamesList) {dataflist = _fileNamesList;}
   inline void SetWorkingdir(TString _workingdir) {workingDir = _workingdir;}
+  inline void SetDefaults(Float_t _w1, Float_t _w2, Float_t _w3, Int_t _w4, Int_t _w5, bool _w6) {W1 = _w1; W2 = _w2; W3 = _w3; W4 = _w4; W5 = _w5; W6 = _w6; };
   Int_t GetRunId(TString);
   void  InitializeRawSignalTree();
   void  InitializeClusterTree(TString);

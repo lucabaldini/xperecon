@@ -159,6 +159,7 @@ class TMainGUI: public TGMainFrame{
   inline Int_t GetNchans() {return maxPixTrasm;}
   virtual Bool_t ProcessMessage(Long_t msg, Long_t par1, Long_t);
   virtual void CloseWindow();
+  void Init();
   Int_t GetRunId(TString RunIdName);
   void InitializeClusterTree(TString);
   void InitializeRawSignalTree();

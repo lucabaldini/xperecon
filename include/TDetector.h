@@ -11,6 +11,8 @@
 class TDetector {
 
  private:
+  Int_t    DebugLevel;
+  char*  progName;
 
   TTree *Evtree;
   MatrixUshort_t fPixMask;
@@ -73,6 +75,8 @@ class TDetector {
   inline void SetWideRadius(Float_t WideRadius) {WideCircleRadius = WideRadius;}
   inline Int_t GetRcounter() {return counter;}
   inline void SetHeaderOn() {HeaderInFile = true;}
+  inline void SetProgParameters(Int_t VLEVEL, char* _name) {DebugLevel = VLEVEL; progName = _name;}
+
 };
 
 #endif

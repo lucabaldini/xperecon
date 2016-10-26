@@ -128,7 +128,7 @@ int GetUserOpt( int argc, char* argv[] )
       return BAD_STAT;
     }
     else {
-      cerr << "[" << argv[0] << " - WARNING] No arguments specified. Using defaults." << endl;
+      cerr << "[" << argv[0] << " - WARNING] No arguments specified. Check settings in config files." << endl;
       return OK_STAT;
     }
 

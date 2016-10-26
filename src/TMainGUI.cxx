@@ -4,35 +4,12 @@
 bool sort_by_ph (TCluster* x, TCluster* y) { return (x->fPulseHeight > y->fPulseHeight); }
 
 TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t VLEVEL, char* _name):TGMainFrame(p, w, h){
-  /*
-  ifstream infofilein;
-  workingdir = gSystem->WorkingDirectory();
-  cout <<"Working directory: =====>>> " <<  workingdir << endl;
-  if ((!gSystem->AccessPathName("info.dat", kFileExists))){
-    infofilein.open("info.dat",ios::in);
-    infofilein >> W1 >> W1;
-    infofilein >> W2 >> W2;
-    infofilein >> W3 >> W3;
-    infofilein >> W4 >> W4; 
-    infofilein >> W5 >> W5; 
-    infofilein >> W6 >> W6;
-  }
-  else { // default conditions
-    W1 = "1.5";  // Small Radius
-    W2 = "3.5";  // Wide Radius
-    W3 = "0.05"; // Weight
-    W4 = "11";   // Threshold  
-    W5 = "0";    // Fixed Thr. Flag
-    W6 = "0";    // Raw signal Flasg
-  }
-
-  W7 = "0"; // FullFrame Flag
-  */
 
   SetProgParameters(VLEVEL, _name);
   SetWorkingdir();
-  cout << "TMainGUI: setting VLEVEL=" << VLEVEL << " _name=" << _name << endl; 
-  cout << "TMainGUI: setting workingdir=" << workingdir << endl; 
+  Init();
+  if (VLEVEL > 0) cout << "TMainGUI: setting VLEVEL=" << VLEVEL << " _name=" << _name << endl; 
+  if (VLEVEL > 0) cout << "TMainGUI: setting workingdir=" << workingdir << endl; 
 
   // Create layout for menubar and popup menus.	
   fMenuBarLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 1, 1);
@@ -121,7 +98,6 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t VLEVEL, char* _n
   else {
     fThfix->SetState(kButtonUp);
     ThfixFlag = 0;
-
   }
 
   fDataThresholdFrame->AddFrame(fThfix, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
@@ -332,25 +308,41 @@ Int_t TMainGUI::GetRunId(TString RunIdName)
   cout << "GetRunId:: RunId = " << RunIdName << " " << endl;
   //UInt_t RunId = (UInt_t) RunIdName.Data();
       
-  return 0;// for now!!!
+  return 0;// for now!!!s
 }
 
 
 void TMainGUI::DataAnalysis()
 {
   TList *_fileNamesList = fi.fFileNamesList;
-  if (DebugLevel >= 0) 
-    cout << "[" << progName << " - MESSAGE] Input files list:  " << fi.fFileNamesList << endl;
-  /*if ((gSystem->AccessPathName(dataflistname, kFileExists))) {
-    if (VLEVEL >= 0) 
-    cout << "[" << progName << " -   ERROR] No file selected." << endl;
-    exit(0);
+  if (DebugLevel > 1) cout << "_fileNamesList " << _fileNamesList << endl;
+  if (DebugLevel >= 0) {
+    if (_fileNamesList == NULL) {
+      cerr << "\n[" << progName << " -   ERROR] No data file selected. Use \'File\' menu." << endl;
+      return;
     }
-  */
-  
+  }
+
+  if (DebugLevel >= 0) {
+    cout << "\n[" << progName << " - MESSAGE] Input files list:" << endl;
+    TObjString *el;
+    TIter next(_fileNamesList);
+    while ((el = (TObjString *) next())){
+      cout << "                     " << el->GetString() << endl;
+    }
+  }
+
   tEventAnalysis = new TEventAnalysis();
   tEventAnalysis->SetDatafilesList(_fileNamesList);
   tEventAnalysis->SetWorkingdir(workingdir);
+  Float_t guiW1 = atof(fW1->GetString());
+  Float_t guiW2 = atof(fW2->GetString());
+  Float_t guiW3 = atof(fW3->GetString());
+  Float_t guiW4 = atof(fThresholdBuf->GetString());
+  Int_t guiW5 = ThfixFlag;
+  Int_t guiW6 = RawFlag;
+  cout << "guiW1 " << guiW1 << "  W1 " << atof(W1.Data()) << endl;
+  tEventAnalysis->SetDefaults(guiW1, guiW2, guiW3, guiW4, guiW5, guiW6);
   tEventAnalysis->Init(DebugLevel, progName, NULL);
   DataPanelDisable();
   Int_t startEv = 0, stopEv = 0;
@@ -358,209 +350,8 @@ void TMainGUI::DataAnalysis()
   if (TString(fEvData1->GetString()) == "All") stopEv = -999;
   else stopEv = atoi(fEvData1->GetString());
 
-  tEventAnalysis->DataAnalysis(DebugLevel, startEv, stopEv);   //// MODIFICARE ANCHE BATCH: NEVTS --> startEv, stopEv, NEVTS=stopEv-startEv
-
-  /*
-  Int_t totnev = 0, nev;
-  TObjString *el;
-  TIter next(fi.fFileNamesList);
-  TString rootFile;
-  TString rootExt = "_TH";
-  Int_t size;
-  string mapName;
-  int err;
-
-  cout << "=====> START ANALYSIS!!!!! " << endl;
-  DataPanelDisable();
-  eofdata = 0;
-  longEv = 0;
-  Rcounter = 0;
-  RTFlag = 0; // O = No EventsTree for MC analisys <<<<<<<<<<<<<============ 
-  //FFflag = atoi(W7);
-
-  if (RTFlag) InitializeEventsTree();
-  SmallRadius  = atof(fW1->GetString());
-  WideRadius   = atof(fW2->GetString());
-  Weight = atof(fW3->GetString());
-  fPixelThreshold = atof(fThresholdBuf->GetString());
-  
-  rootExt += (TString)fThresholdBuf->GetString();
-  rootExt += ".root";
-
-  Int_t startEv = 0, stopEv = 0;
-  startEv = atoi(fEvData->GetString());
-
-  RawFlag = fCheck1->GetState();
-  ThfixFlag = fThfix->GetState();
-
-  gSystem->ChangeDirectory(workingdir);
-  if ((!gSystem->AccessPathName("RawSignals.root", kFileExists)) && (!RawFlag)) 
-    gSystem->Rename("RawSignals.root","RawSignals_old.root");
-  
-  //start LOOP on Input files!!!!!
-  while ((el = (TObjString *) next())){
-    DataName = el->GetString(); 
-    size = DataName.Length();
-    rootFile = DataName;	
-    rootFile.Replace(size-5,rootExt.Length(),rootExt);
-    cout << "Input file        --> " << DataName << endl;
-    cout << "Clusters saved in --> " << rootFile << endl;
-
-    //Need to extract Run Number and write in output.
-    fRunId = GetRunId(DataName); 
-      
-    if (!gSystem->AccessPathName(DataName, kFileExists)) {
-      MCflag = 0;
-      NewDataFlag = 0; // <<<<<<=============== Flag for reading matrix of data from new chip3
- 
-      if (DataName.Contains(".root")) MCflag = 1;        // MonteCarlo data
-      if (DataName.Contains(".mdat")) NewDataFlag = 1;   // ROI data from new chip3 (Still not ped subtracted)
-      //if (DataName.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
- 
-      infofile.open("info.dat",ios::out);
-      infofile << "SmallRadius: " << SmallRadius << endl;
-      infofile << "WideRadius: " << WideRadius << endl;
-      infofile << "Weight: " << Weight << endl;
-      infofile << "Threshold: " << fPixelThreshold << endl;
-      infofile << "FixThrFlag: " << ThfixFlag << endl;
-      infofile << "RawDataFlg: " << RawFlag << endl;
-      infofile.close();
-       
-      InitializeClusterTree(rootFile);
-       
-      if (RawFlag&&NewDataFlag) InitializeRawSignalTree();
-      gSystem->ChangeDirectory(workingdir);
-      
-      mapName = "pixmap_xpe.fits";
-      if (!gSystem->AccessPathName(mapName.c_str(), kFileExists )) {
-	if (MCflag) {
-	  TFile *f = new TFile(DataName);
-	  TTree *t=(TTree*)f->Get("EventsTree");
-	  if (TString(fEvData1->GetString()) == "All")stopEv=(int)t->GetEntries();
-	  else stopEv = atoi(fEvData1->GetString());
-	  cout << "Events to be read in MC tree:  " << stopEv-startEv+1 << endl;
-	  Polarimeter = new TDetector(mapName,t);
-	  Polarimeter->SetWeight(Weight);
-	  Polarimeter->SetSmallRadius(SmallRadius);
-	  Polarimeter->SetWideRadius(WideRadius);
-	  Polarimeter->fPixelThresh = fPixelThreshold;
-	  Polarimeter->fPixelThresh = 1;
-	  nev = 0;
-	  for (Int_t i=startEv; i<=stopEv; i++) {
-	    f->cd();
-	    nev++;
-	    gSystem->ProcessEvents(); 
-	    if (!((i-startEv)%1000)) cout << "========>>> Analized " << i-startEv << " MC events" << endl;
-	    eofdata = Polarimeter->ReadMCFile(i);
-	    Int_t NbClusters = Polarimeter->FindClusters();
-	    if (Polarimeter->GetRcounter()) Rcounter++;
-	    if (!NbClusters) nev--;
-	    SaveClusters(NbClusters,nev);
-	    totnev++;
-	  }
-	  totnev = totnev + startEv;
-	}//MonteCarlo flag 
-
-	else {
-	  RawFileName = new TInputFile(DataName, kBinary);
-	  Polarimeter = new TDetector(mapName, RawFileName);
-	  if(HeaderOn)Polarimeter->SetHeaderOn();
-	  Polarimeter->SetWeight(Weight);
-	  Polarimeter->SetSmallRadius(SmallRadius);
-	  Polarimeter->SetWideRadius(WideRadius);
-	  Polarimeter->fPixelThresh = fPixelThreshold;
-	  Polarimeter->fThreshFlag = ThfixFlag;
-	  if(!ThfixFlag){
-	    err = Polarimeter->ReadRMS();
-	    if(err) {
-	      cout << "=====> ERROR in reading PEDFITS file!!!! - EXIT! " << endl;
-	      return;
-	    }
-	  }
-	  nev = 0;
-	  totnev = 0;
-	   
-	  if (TString(fEvData1->GetString()) == "All") cout << "Read ALL events in file" << endl;
-	  else {
-	    stopEv = atoi(fEvData1->GetString());
-	    cout << stopEv-startEv+1 << " events to be read" << endl;
-	  }
-	  timer1.Start(kTRUE);
-	   
-	  while(!Polarimeter->fRawFile->fStream.eof()){
-	    if (stopEv && totnev == stopEv+1) break;
-	    nev++;
-	    totnev++;
-	    gSystem->ProcessEvents(); //Added 29-01-08
-	     
-	    eofdata =  Polarimeter->ReadROInew(totnev);
-	     
-	    if(eofdata==1) {
-	      cout << "===========>>>> Event : " << totnev << "  end of file!!" << endl;
-	      break;
-	    }
-	    if(eofdata==2){
-	      cout << totnev << " bad window ==> event rejected " << endl;
-	      longEv++;
-	      nev--;  
-	      continue;
-	    }       
-	    if(totnev < startEv){
-	      nev = 0;
-	      continue;
-	    }
-	     
-	    if (!((totnev-startEv)%1000)) cout << (totnev-startEv) << " events analized starting from ev: " << startEv << endl;
-	     
-	    Int_t NbClusters = Polarimeter->FindClusters();
-	    if (Polarimeter->GetRcounter()) Rcounter++;
-	    if (RawFlag) SaveRawSignal(nev);
-	    if (!NbClusters)
-	      {
-		//cout << "nev:  " << nev << "   NClusters:  " << NbClusters << " ---> NO CLUSTER FOUND in tot ev " << totnev <<  endl;
-		nev--;  
-		continue;
-	      }
-	    else {
-	      //cout << " OK nev: " << nev << " toteV " << totnev << endl;
-	      if (RTFlag && NbClusters==1) SaveEventstree(NbClusters,nev);
-	      if (RawFlag && NbClusters>=1 && NewDataFlag) SaveRawSignal(nev);
-	      if (NbClusters>=1) SaveClusters(NbClusters,nev);
-	    }
-	  }// end while
-	  
-	}//Real Data
-	 
-	cout << "===>>> end loop on events" << endl;
-	timer1.Stop();
-	timer1.Print("m");
-	 
-	//WriteRawSignalTree();
-	cout << " +++++  Rejected for numPixels Xeedoing MAX transf. : " << longEv << endl;
-	cout << nev << " events found over a total of " << (totnev-startEv) << " (" << (Float_t)(nev*100)/(totnev-startEv) << "%)" << endl;	
-	//if(nev ==0)break;
-	cout << "Impact points within selected circles: " << Rcounter << " -->> " << Float_t (Rcounter*100/nev) << " %" << endl;
-
-	if (RTFlag&&nev) WriteEventsTree();
-	WriteClusterTree(rootFile);
-	if (RawFlag&&NewDataFlag&&nev) WriteRawSignalTree();
-	if(nev)DrawCumulativeHitMap(nev);
-
-	CloseFiles();	   
-	 
-      }//pixmap
-      else {
-	cout << "Pixmap file not existing!!!" << endl;
-	return;
-      } 
-	   
-    }//datafile
-    else {
-      cout << "Data File: " << DataName << " not existing!!!" << endl;
-    }
-   
-  } //END LOOP ON FILES!!!!
-  */
+  tEventAnalysis->DataAnalysis(DebugLevel, startEv, stopEv);
+  //delete tEventAnalysis;
   DataPanelEnable();
   return;
 }
@@ -866,5 +657,30 @@ void TMainGUI::DataPanelEnable()
   fWeightEntry->SetState(true);
   return;
  }
+
+void TMainGUI::Init()
+{
+  ifstream infofilein;
+  if ((!gSystem->AccessPathName("info.dat", kFileExists))){
+    infofilein.open("info.dat",ios::in);
+    infofilein >> W1 >> W1;
+    infofilein >> W2 >> W2;
+    infofilein >> W3 >> W3;
+    infofilein >> W4 >> W4; 
+    infofilein >> W5 >> W5;
+    infofilein >> W6 >> W6;
+  }
+  else {         // default conditions
+    W1 = "1.5";  // Small Radius
+    W2 = "3.5";  // Wide Radius
+    W3 = "0.05"; // Weight
+    W4 = "11";   // Threshold  
+    W5 = "1";    // Fixed Threshold Flag
+    W6 = "0";    // Raw signal Flag
+  }
+
+  W7 = "0";      // FullFrame Flag
+}
+
 
 ClassImp(TMainGUI)

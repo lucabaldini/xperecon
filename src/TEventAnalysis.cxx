@@ -8,7 +8,7 @@ TEventAnalysis::TEventAnalysis()
 TEventAnalysis::TEventAnalysis(Int_t VLEVEL, char* _name, char* _dflist, Int_t startEv, Int_t stopEv)
 {
   Init(VLEVEL, _name, _dflist);
-  cout << "startev stopev " << startEv << ' ' << stopEv << endl;
+  if (VLEVEL > 1) cout << "[" << progName << " -   DEBUG] startev stopev " << startEv << ' ' << stopEv << endl;
   DataAnalysis(VLEVEL, startEv, stopEv);
 }
 
@@ -17,8 +17,11 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
 {
   SetProgName(_name);
 
+  bool is_batch = ( (_dflist == NULL) ? 0 : 1 );
+  if (VLEVEL >= 1) cout << "[" << progName << " -   DEBUG] is_batch " << is_batch << endl;
+
   /* Files and extensions */
-  if (_dflist != NULL) {  // Batch: set working dir now. Interactive: already got from GUI
+  if (is_batch) {  // Batch: set working dir now. Interactive: already got from GUI
     workingDir = gSystem->WorkingDirectory();
   }
   outputDir  = workingDir + "/out";
@@ -32,55 +35,62 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   configfilename = workingDir + "/config.dat";    // user's configuration
   dataflistname  = workingDir + "/" + _dflist;    // data file list  
 
+  if (VLEVEL > 1)
+    cout << "[" << progName << " -   DEBUG] before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
+
   /* Default parameters */
-  W1 = 1.5;    // SmallCircleRadius
-  W2 = 3.5;    // WideCircleRadius
-  W3 = 0.05;   // WeightLengthScale
-  W4 = 9;      // PixelThreshold  
-  W5 = 1;      // FixThrFlag
-  W6 = false;  // RawSignalSave
-  W7 = false;  // FullFrameFlag
-
-  //cout << "before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
-  /* Read parameters from config file and overwrite defaults if any */
-  if ((gSystem->AccessPathName(configfilename, kFileExists))) 
-    if (VLEVEL >= 0) 
-      cout << "[" << progName << " - MESSAGE] No config file found: using defaults." << endl;
-
-  ifstream _configfile;
-  if ((!gSystem->AccessPathName(configfilename, kFileExists))) {
-    if (VLEVEL >= 0) 
-      cout << "[" << progName << " - MESSAGE] Using config file  " << configfilename << endl;
-    _configfile.open(configfilename, ios::in);
-    string line;
-    string w1("SmallCircleRadius");
-    string w2("WideCircleRadius");
-    string w3("WeightLengthScale");
-    string w4("PixelThreshold");
-    string w5("FixThrFlag");
-    string w6("RawSignalSave");
-    string w7("FullFrameFlag");
-
-    if (VLEVEL >= 0) 
-      cout << "[" << progName << " - MESSAGE] Reading parameters: " << endl;
-    while ( getline(_configfile,line) ) {
-      stringstream ssline(line);
-      string _param;
-      Float_t _val;
-      ssline >> _param >> _val;
+  if (is_batch) {  // Batch: set parameters now. Interactive: already got from GUI
+    W1 = 1.5;    // SmallCircleRadius
+    W2 = 3.5;    // WideCircleRadius
+    W3 = 0.05;   // WeightLengthScale
+    W4 = 11;     // PixelThreshold  
+    W5 = 1;      // FixThrFlag
+    W6 = false;  // RawSignalSave
+    W7 = false;  // FullFrameFlag
+    
+    /* Read parameters from config file and overwrite defaults if any */
+    if ((gSystem->AccessPathName(configfilename, kFileExists))) 
       if (VLEVEL >= 0) 
-	cout << "                     " << _param << ' ' << _val <<endl;
-      if ( strstr(_param.c_str(), w1.c_str()) ) W1 = _val;
-      if ( strstr(_param.c_str(), w2.c_str()) ) W2 = _val;
-      if ( strstr(_param.c_str(), w3.c_str()) ) W3 = _val;
-      if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
-      if ( strstr(_param.c_str(), w5.c_str()) ) W5 = _val;
-      if ( strstr(_param.c_str(), w6.c_str()) ) W6 = _val;
-      if ( strstr(_param.c_str(), w7.c_str()) ) W7 = _val;
+	cout << "[" << progName << " - MESSAGE] No config file found: using defaults." << endl;
+    
+    ifstream _configfile;
+    if ((!gSystem->AccessPathName(configfilename, kFileExists))) {
+      if (VLEVEL >= 0) 
+	cout << "[" << progName << " - MESSAGE] Using config file: " << configfilename << endl;
+      _configfile.open(configfilename, ios::in);
+      string line;
+      string w1("SmallCircleRadius");
+      string w2("WideCircleRadius");
+      string w3("WeightLengthScale");
+      string w4("PixelThreshold");
+      string w5("FixThrFlag");
+      string w6("RawSignalSave");
+      string w7("FullFrameFlag");
+      
+      if (VLEVEL >= 0) 
+	cout << "[" << progName << " - MESSAGE] Reading parameters: " << endl;
+      while ( getline(_configfile,line) ) {
+	stringstream ssline(line);
+	string _param;
+	Float_t _val;
+	ssline >> _param >> _val;
+	if (VLEVEL >= 0) 
+	  cout << "[" << progName << " - MESSAGE]             " << _param << ' ' << _val <<endl;
+	if ( strstr(_param.c_str(), w1.c_str()) ) W1 = _val;
+	if ( strstr(_param.c_str(), w2.c_str()) ) W2 = _val;
+	if ( strstr(_param.c_str(), w3.c_str()) ) W3 = _val;
+	if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
+	if ( strstr(_param.c_str(), w5.c_str()) ) W5 = _val;
+	if ( strstr(_param.c_str(), w6.c_str()) ) W6 = _val;
+	if ( strstr(_param.c_str(), w7.c_str()) ) W7 = _val;
+      }
+      _configfile.close();
     }
-    _configfile.close();
+
   }
-  //cout << "after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
+
+  if (VLEVEL > 1)
+    cout << "[" << progName << " -   DEBUG] after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
 
   /* Set parameters */
   SmallRadius     = W1; 
@@ -109,8 +119,9 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
     cout << "[" << progName << " - MESSAGE] Current config written in file " << infofilename << endl;
 
   /* Get input data files list */
-  cout << "dataflist " << dataflist << endl;
-  if (_dflist != NULL) {  // Batch: build file list from datafile list. Interactive: already got from GUI
+  if (VLEVEL > 1) cout << "[" << progName << " -   DEBUG] dataflist " << dataflist << endl;
+
+  if (is_batch) {  // Batch: build file list from datafile list. Interactive: already got from GUI
     if (VLEVEL >= 0) 
       cout << "[" << progName << " - MESSAGE] Input files list:  " << dataflistname << endl;
     if ((gSystem->AccessPathName(dataflistname, kFileExists))) {
@@ -118,9 +129,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
 	cout << "[" << progName << " -   ERROR] File not found." << endl;
       exit(0);
     }
-    //}
 
-    //if (_dflist == NULL) {  // Batch: build file list from datafile list. Interactive: already got from GUI
     ifstream _dataflist;
     dataflist = new TList();
     if ((!gSystem->AccessPathName(dataflistname, kFileExists))) {
@@ -150,8 +159,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
   TObjString *el;
   int err;
   TList *_fileNamesList = NULL;
-
-  cout << "CIAO MERDA" << endl;
 
   if(dataflist->GetEntries()!=0) {
     _fileNamesList = dataflist;
@@ -186,12 +193,12 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
     pathsize = _rootFile.Last('/');
     _rootFile.Remove(0,pathsize);
     size = _rootFile.Length();
-    cout << " pathsize size " << pathsize <<  ' ' << size << endl;
+    if (VLEVEL > 1) cout << " pathsize, size " << pathsize <<  ' ' << size << endl;
     _rootFile.Replace(size-5,rootExt.Length(),rootExt);
     _rootFile = outputDir + _rootFile;
     if (VLEVEL >= 0) { 
-      cout << "[" << progName << " - MESSAGE] Input file:        " << _dataFile << endl;
-      cout << "[" << progName << " - MESSAGE] Clusters saved in: " << _rootFile << endl;
+      cout << "[" << progName << " - MESSAGE] Input file:  " << _dataFile << endl;
+      cout << "[" << progName << " - MESSAGE] Clusters in: " << _rootFile << endl;
     }
     /* Need to extract Run Number and write in output */
     fRunId = GetRunId(_dataFile); 
@@ -224,6 +231,9 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 
 	  cout << "[" << progName << " - MESSAGE] Events to be read in MC tree:  " << stopEv-startEv+1 << endl;
 	  Polarimeter = new TDetector(mapName,t);
+	  cout << " TEventAnalysis:: progName " << progName << endl;
+	  Polarimeter->SetProgParameters(VLEVEL, progName);
+
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
@@ -251,7 +261,8 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	    cout <<  "[" << progName << " - WARNING] Real data " << endl;
 	  RawFileName = new TInputFile(_dataFile, kBinary);
 	  Polarimeter = new TDetector(mapName, RawFileName);
-	   
+	  Polarimeter->SetProgParameters(VLEVEL, progName);
+
 	  if(HeaderOn)Polarimeter->SetHeaderOn();
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
@@ -275,7 +286,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	  else {
 	    // stopEv = (int)NEVTS;
 	    if (VLEVEL >= 0)
-	      cout << "[" << progName << " - MESSAGE] " << stopEv-startEv+1 << " events to be read" << endl;
+	      cout << "[" << progName << " - MESSAGE] Reading " << stopEv-startEv+1 << " events" << endl;
 	  }
 	  timer2.Start(kTRUE);
 
@@ -323,7 +334,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	  
 	}//Real Data
 	 
-	cout << "[" << progName << " - MESSAGE] End loop on events" << endl;
+	cout << "[" << progName << " - MESSAGE] ====>>> END loop on events" << endl;
 	timer2.Stop();
 	if (VLEVEL >= 0) {
 	  cout << "[" << progName << " - MESSAGE] ";
@@ -538,7 +549,7 @@ void TEventAnalysis::WriteRawSignalTree(){
 void TEventAnalysis::WriteClusterTree(TString rootFile){
   DataAnalizedFile->cd();
   fTree->Write();
-  cout << "[" << progName << " - MESSAGE] Writing all clusters found in root file ==>> " << rootFile << endl;
+  cout << "[" << progName << " - MESSAGE] Writing clusters in root file." << endl;
   delete fTree;
   DataAnalizedFile->Close();
   delete DataAnalizedFile;

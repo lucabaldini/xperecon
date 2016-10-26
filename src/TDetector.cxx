@@ -165,7 +165,7 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
    }
 
   for (int jj=0; jj<maxPixTrasm; jj++)fROIRawData[jj] = 0;
-  if(numEv==1) cout << "====>>> PIXEL THRESHOLD!  " << fPixelThresh  << "  ADC counts" << endl;
+  if(numEv==1) cout << "[" << progName << " - MESSAGE] ====>>> PIXEL THRESHOLD!  " << fPixelThresh  << "  ADC counts" << endl;
     
   if(HeaderInFile && numEv==1){
     cout << "-------> read Header in rawdata file..." << endl;

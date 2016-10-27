@@ -152,6 +152,15 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
 }
 
 
+TEventAnalysis::~TEventAnalysis() 
+{
+  delete dataflist;
+  dataflist = NULL;
+  delete fTree;
+  delete DataAnalizedFile;
+}
+
+
 
 void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 {
@@ -263,7 +272,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	  Polarimeter = new TDetector(mapName, RawFileName);
 	  Polarimeter->SetProgParameters(VLEVEL, progName);
 
-	  if(HeaderOn)Polarimeter->SetHeaderOn();
+	  if (HeaderOn) Polarimeter->SetHeaderOn();
 	  Polarimeter->SetWeight(Weight);
 	  Polarimeter->SetSmallRadius(SmallRadius);
 	  Polarimeter->SetWideRadius(WideRadius);
@@ -685,9 +694,5 @@ void TEventAnalysis::ClearArrays(Int_t NbClusters){
   return;
 }
 
-TEventAnalysis::~TEventAnalysis() {
-  delete dataflist;
-  dataflist = NULL;
-}
 
 //ClassImp(TEventAnalysis)

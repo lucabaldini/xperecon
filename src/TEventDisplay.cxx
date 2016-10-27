@@ -124,7 +124,7 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   //++++ RIGHT VERTICAL FRAME ++++  
   fVframe2 = new TGVerticalFrame(fMainFrame, 0, 0, 0);
   
-  fCluDisplayFrame = new TGGroupFrame(fVframe2, new TGString("Diplay Clusters Plots"),kVerticalFrame);
+  fCluDisplayFrame = new TGGroupFrame(fVframe2, new TGString("Display Clusters Plots"),kVerticalFrame);
   fCluCutFrame = new TGGroupFrame(fCluDisplayFrame, new TGString("Cuts on events"),kVerticalFrame);
 
   fHPulseCutFrame = new  TGHorizontalFrame(fCluCutFrame, 0, 0, 0);
@@ -1740,7 +1740,7 @@ void TEventDisplay::DrawHistos(){
   Int_t flagClu;
   T0 = 0., T1 = 0.;
   Int_t bufIdStart = 0;
-  //Diplay Histos
+  //Display Histos
   fCluHistosCanvas->Clear();
   fCluHistosCanvas->Divide(4,3);
   ((TH2F*)histList->At(11))->Reset();

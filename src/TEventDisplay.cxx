@@ -15,19 +15,7 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   infofile >> Dummy  >> SmallCRadius;
   infofile >> Dummy  >>  WideCRadius;
   infofile.close();
-    
-  fullpath = workingdir + "/RawSignals.root";
-  if (!gSystem->AccessPathName(fullpath.c_str(), kFileExists)) {
-    RawSignalFile = new TFile(fullpath.c_str(), "r");
-    RawTree = (TTree*)gDirectory->Get( "RawSignaltree" );
-    RawTree->SetBranchAddress("fEventId", &fEventId);
-    RawTree->SetBranchAddress("fRawSignal",fRawSignal);
-    RawSignalFlag = 1;
-  }
-  else {
-    RawSignalFlag = 0;
-  }
-  
+
   infodispfn = workingdir +"/infodisplay.dat";
   if (!gSystem->AccessPathName(infodispfn, kFileExists)) { // reads last settings of the display control panel
     ReadInfoFile(infodispfn);
@@ -75,11 +63,6 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   fPlotButton->ChangeBackground(green);
   fPlotButton->Connect("Clicked()","TEventDisplay",this,"DisplayEv()");
   fPlotButton->SetToolTipText("Press here to display event");
-
-  //Display raw data
-  fDisplaySigButton = new TGTextButton(fEvSelectFrame, "Display &Raw Data");
-  fDisplaySigButton->Connect("Clicked()","TEventDisplay",this,"DisplayRawEv()");
-  fDisplaySigButton->SetToolTipText("Press here to display raw signal");
 
   //Show selection regions (circles)
   fDCirclesButton = new TGTextButton(fEvSelectFrame, "Display S/W &Circles");
@@ -285,7 +268,6 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   fEvSelectFrame->AddFrame(fHslider, fSliderLayout);
   fEvSelectFrame->AddFrame(fHNavigationFrame, fSliderLayout);
   fEvSelectFrame->AddFrame(fPlotButton, fSliderLayout);
-  fEvSelectFrame->AddFrame(fDisplaySigButton, fSliderLayout);
   fEvSelectFrame->AddFrame(fDCirclesButton, fSliderLayout);
   fEvSelectFrame->AddFrame(fHZoomFrame, fSliderLayout);
   fEvSelectFrame->AddFrame(fPlotButtonSel, fSliderLayout);
@@ -385,7 +367,6 @@ TEventDisplay::TEventDisplay(const TGWindow *p, const TGWindow *main,
   SetWindowName("Pixy Data Display (v6.1)");
   MapWindow();
   Move(100,400);
-  RawSignalHisto=NULL;		//to avoid sigfault when calling the button more than once.
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -416,8 +397,6 @@ TEventDisplay::~TEventDisplay()
     delete PHeightFunction;
     delete branchList;
     delete Clusterdatafile;
-    delete RawSignalHisto;
-    delete RawSignalFile;
     delete fLayerLabelFrame;
     delete fLayerSignalHighFrame;
     delete fLayerSignalLowFrame;
@@ -486,11 +465,9 @@ TEventDisplay::~TEventDisplay()
     delete fMainFrame;
 
     if (gROOT->GetListOfCanvases()->FindObject(fDisplayCanvas))delete fDisplayCanvas;
-    if (gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas)) delete fDisplayRawSigCanvas;
     if (gROOT->GetListOfCanvases()->FindObject(fCluHistosCanvas))delete fCluHistosCanvas;
 
     //if (Clusterdatafile)  Clusterdatafile->Close();
-    //if (RawSignalFile) RawSignalFile->Close();
     */
 }
 
@@ -757,7 +734,23 @@ void TEventDisplay::DisplayData(Int_t EventNumber)
       }
     }
     //    cout << "=====>>>>> " << projMax - projMin << "   ---  " << fCluLenght[nclusters]<<  endl;
-  } 
+  }
+
+  //Draw ROI
+  float xmin,ymin,xmax,ymax;
+ 
+  xmin = PixmapX[ROI[2]][ROI[0]];
+  ymin = PixmapY[ROI[2]][ROI[0]];
+  xmax = PixmapX[ROI[3]][ROI[1]];
+  ymax = PixmapY[ROI[3]][ROI[1]];
+  
+  if(fNBXpixels[0]>0||fNBYpixels[0]>0){ 
+    window->DrawLine(xmin,ymin,xmin,ymax);
+    window->DrawLine(xmin,ymax,xmax,ymax);
+    window->DrawLine(xmax,ymax,xmax,ymin);
+    window->DrawLine(xmax,ymin,xmin,ymin);
+  }
+
   Float_t x, y;
   if(PhiR && Rflag) {
     x = RealImpactX*10+ReCenterX; // RealImpactX/Y from MC in cm must be converted in mm
@@ -1090,17 +1083,25 @@ void TEventDisplay::BookHistos(){
   fRateHisto->GetXaxis()->SetTitle("Rate (Hz)");
   obj = fRateHisto;
   histList->Add(obj);
-}
+ }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TEventDisplay::InitializeTree(){
-  
+  window = new TLine();
+  window->SetLineColor(kRed);
   ClusterTree = (TTree*)gDirectory->Get( "tree" );
   ClusterTree->SetBranchAddress("fEventId", &fEventId);
   ClusterTree->SetBranchAddress("fNClusters", &fNClusters);
   ClusterTree->SetBranchAddress("fTrigWindow", &fTrigWindow); 
   ClusterTree->SetBranchAddress("fTimeStamp", &fTimeStamp); 
-  ClusterTree->SetBranchAddress("fbufferId",&fbufferId);
+  ClusterTree->SetBranchAddress("fbufferId", &fbufferId);
+  ClusterTree->SetBranchAddress("ROI", ROI);
+
+  ClusterTree->SetBranchAddress("fPHBXpixels", &fPHBXpixels);
+  ClusterTree->SetBranchAddress("fNBXpixels", &fNBXpixels);
+  ClusterTree->SetBranchAddress("fPHBYpixels", &fPHBYpixels);
+  ClusterTree->SetBranchAddress("fNBYpixels", &fNBYpixels);
+
   ClusterTree->SetBranchAddress("fCluSize", fCluSize);
   ClusterTree->SetBranchAddress("fXpixel", fXpixel);
   ClusterTree->SetBranchAddress("fYpixel", fYpixel);
@@ -1258,14 +1259,28 @@ void TEventDisplay::ReadPixmap(){
   long ntrows;
   char TABNAME[] = "PIXMAP";
 
+  float X[NCHANS], Y[NCHANS];
+  int I[NCHANS], J[NCHANS];
+
   string fullpath = workingdir + "/pixmap_xpe.fits";
   if (!fits_open_file(&fptr, fullpath.c_str(), READONLY, &status)) {
   fits_movnam_hdu(fptr, BINARY_TBL, TABNAME,0, &status);
   fits_get_num_rows(fptr, &ntrows, &status);
+  fits_read_col(fptr, TINT, 1, 1, 1, ntrows, NULL, J, NULL, &status);
+  fits_read_col(fptr, TINT, 2, 1, 1, ntrows, NULL, I, NULL, &status);
+  fits_read_col(fptr, TFLOAT, 3, 1, 1, ntrows, NULL, X, NULL, &status);
+  fits_read_col(fptr, TFLOAT, 4, 1, 1, ntrows, NULL, Y, NULL, &status);  
   }
-  else cout << "ERROR!!!!!" << endl;
-  return;
+  else 
+    {cout << "ERROR!!!!!" << endl;
+      return;
+    }
 
+  for (int ch =0; ch<NCHANS;ch++){
+       PixmapX[I[ch]][J[ch]] = X[ch];
+       PixmapY[I[ch]][J[ch]] = Y[ch];
+     }
+  /*
   if (!gSystem->AccessPathName(fullpath.c_str(), kFileExists)) {
     // Read the file for the first time as to evaluate minX, maxX, minY and maxY.
   
@@ -1284,6 +1299,7 @@ void TEventDisplay::ReadPixmap(){
 	  }
 	}
   }
+  */
   gSystem->cd(datadir);
   return;
 }
@@ -1486,22 +1502,7 @@ void TEventDisplay::PrevEv(){
     fCluHistosCanvas->Close();
     delete fCluHistosCanvas;
   }	
-  //if already called raw event is displayed too	
-  if (gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas))
-    {
-      RawSignalFile->cd();
-      RawTree->GetEntry(EvtNb);
-      if (!RawSignalHisto ){
-	RawSignalHisto = new TH1F("Raw", "Raw data", maxPixTrasm, 0, maxPixTrasm);
-	RawSignalHisto->SetFillColor(60);
-      }
-      fDisplayRawSigCanvas->Clear();
-      RawSignalHisto->Reset();
-      for (Int_t i=0; i<maxPixTrasm; i++)rawSignal[i] = Double_t(fRawSignal[i]);
-      RawSignalHisto->FillN(maxPixTrasm, Chans, rawSignal, 1);
-      RawSignalHisto->Draw();
-      fDisplayRawSigCanvas->Update();
-    }
+ 
   if (!gROOT->GetListOfCanvases()->FindObject(fDisplayCanvas))
     {
       fDisplayCanvas = new TCanvas("Single event display", "Single event display", 10, 120, 800, 800);
@@ -1515,48 +1516,9 @@ void TEventDisplay::PrevEv(){
   fDisplayCanvas->Update();
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void TEventDisplay::DisplayRawEv(){
-  if (!RawSignalFlag) {
-    box = new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(),"Error Message", 
-		       "File with Raw Signal not existing. Run Analize data first!!!",icontype, buttons, &retval);
-    return;
-  }
-  else {
-    for (Int_t i=0; i<maxPixTrasm; i++)Chans[i]=(Axis_t)i;
-    EvtNb = atoi(fTbuffer1->GetString());
-    if (gROOT->GetListOfCanvases()->FindObject(fCluHistosCanvas)){
-      fCluHistosCanvas->Close();
-      delete fCluHistosCanvas;
-    }
-    if (!gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas))
-      {
-	fDisplayRawSigCanvas = new TCanvas("Raw Signal Canvas", "Raw Signal Display", 600, 40, 500, 300);
-	fDisplayRawSigCanvas->SetFillColor(10);
-	cout << "Creating canvas to display raw signal" << endl;
-      }	
-    RawSignalFile->cd();
-    RawTree->GetEntry(EvtNb);
-    
-    if (!RawSignalHisto ){
-      for (Int_t i=0; i<maxPixTrasm; i++)Chans[i]=(Axis_t)i;
-      RawSignalHisto = new TH1F("Raw", "Raw data", maxPixTrasm, 0, maxPixTrasm);
-      RawSignalHisto->SetFillColor(60);
-    }
-    RawSignalHisto->Reset();
-    for (Int_t i=0; i<maxPixTrasm; i++)rawSignal[i] = Double_t(fRawSignal[i]);
-    RawSignalHisto->FillN(maxPixTrasm, Chans, rawSignal, 1);
-    RawSignalHisto->Draw();
-    fDisplayRawSigCanvas->Update();
-  }
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TEventDisplay::DisplayEv(){
-  if (gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas)) {
-    fDisplayRawSigCanvas->Close();
-    delete fDisplayRawSigCanvas;
-  }
   if (gROOT->GetListOfCanvases()->FindObject(fCluHistosCanvas)){
     fCluHistosCanvas->Close();
     delete fCluHistosCanvas;
@@ -1604,7 +1566,7 @@ void TEventDisplay::SelectEv(){
 	    (fNClusters>=NClustLoThresh)              &&  (fNClusters<=NClustHiThresh)         &&
 	    (((fMomX[ncluMax]/fMomY[ncluMax])>=ShapeLoThresh) &&  ((fMomX[ncluMax]/fMomY[ncluMax])<=ShapeHiThresh) &&
 	     ((fMomThirdX[ncluMax] >= M3LoThresh)         &&  (fMomThirdX[ncluMax] <= M3HiThresh))) &&
-	    (TMath::Sqrt((fBaricenterY[ncluMax]*fBaricenterY[ncluMax]) + (fBaricenterX[ncluMax]*fBaricenterX[ncluMax]))<=10.)   &&
+	    (TMath::Sqrt((fBaricenterY[ncluMax]*fBaricenterY[ncluMax]) + (fBaricenterX[ncluMax]*fBaricenterX[ncluMax]))<=CircleRadiusCut)   &&
 	    (fBaricenterY[ncluMax]>=GeomYDownCut)     &&  (fBaricenterY[ncluMax]<=GeomYUpCut)  &&
 	    (fBaricenterX[ncluMax]>=GeomXLeftCut)     &&  (fBaricenterX[ncluMax]<=GeomXRightCut)
 	    )
@@ -1625,7 +1587,7 @@ void TEventDisplay::SelectEv(){
 	    (fNClusters>=NClustLoThresh)              && (fNClusters<=NClustHiThresh)           &&
 	    (((fMomX[ncluMax]/fMomY[ncluMax])>=ShapeLoThresh) && ((fMomX[ncluMax]/fMomY[ncluMax])<=ShapeHiThresh)  &&
 	     ((fMomThirdX[ncluMax] <= M3LoThresh)   || (fMomThirdX[ncluMax] >= M3HiThresh)))  &&
-	    (TMath::Sqrt((fBaricenterY[ncluMax]*fBaricenterY[ncluMax]) + (fBaricenterX[ncluMax]*fBaricenterX[ncluMax]))<=10.)  &&
+	    (TMath::Sqrt((fBaricenterY[ncluMax]*fBaricenterY[ncluMax]) + (fBaricenterX[ncluMax]*fBaricenterX[ncluMax]))<=CircleRadiusCut)  &&
 	    (fBaricenterY[ncluMax]>=GeomYDownCut)     && (fBaricenterY[ncluMax]<=GeomYUpCut)    &&
 	    (fBaricenterX[ncluMax]>=GeomXLeftCut)     && (fBaricenterX[ncluMax]<=GeomXRightCut)
 	    )	
@@ -1722,10 +1684,7 @@ void TEventDisplay::DrawHistos(){
     fDisplayCanvas->Close();
     delete fDisplayCanvas;
   }
-  if (gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas)) {
-    fDisplayRawSigCanvas->Close();
-    delete fDisplayRawSigCanvas;
-  }
+
   if (!gROOT->GetListOfCanvases()->FindObject(fCluHistosCanvas))
     { 
       fCluHistosCanvas = new TCanvas("Clusters Histos window", " Clusters Histos", 900, 20, 1000, 650);
@@ -1774,7 +1733,7 @@ void TEventDisplay::DrawHistos(){
 	      (fNClusters>=NClustLoThresh)              &&  (fNClusters<=NClustHiThresh)             &&
 	      (((fMomX[ncl]/fMomY[ncl])>=ShapeLoThresh) &&  ((fMomX[ncl]/fMomY[ncl])<=ShapeHiThresh) &&
 	       ((fMomThirdX[ncl] >= M3LoThresh)         &&  (fMomThirdX[ncl] <= M3HiThresh))) &&
-	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=10.)   &&
+	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=CircleRadiusCut)   &&
 	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
 	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )
@@ -1796,7 +1755,7 @@ void TEventDisplay::DrawHistos(){
 	      (fNClusters>=NClustLoThresh)              && (fNClusters<=NClustHiThresh)              &&
 	      (((fMomX[ncl]/fMomY[ncl])>=ShapeLoThresh) && ((fMomX[ncl]/fMomY[ncl])<=ShapeHiThresh)  &&
 	       ((fMomThirdX[ncl] <= M3LoThresh)           || (fMomThirdX[ncl] >= M3HiThresh)))           &&
-	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=10.)  &&
+	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=CircleRadiusCut)  &&
 	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
 	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )				     
@@ -1943,22 +1902,7 @@ void TEventDisplay::NextEv(){
     fCluHistosCanvas->Close();
     delete fCluHistosCanvas;
   }	
-  //if already called display raw event too	
-  if (gROOT->GetListOfCanvases()->FindObject(fDisplayRawSigCanvas))
-    {
-      RawSignalFile->cd();
-      RawTree->GetEntry(EvtNb);
-      if (!RawSignalHisto ){
-	RawSignalHisto = new TH1F("Raw", "Raw data", maxPixTrasm, 0, maxPixTrasm);
-	RawSignalHisto->SetFillColor(60);
-      }	    
-      fDisplayRawSigCanvas->Clear();
-      RawSignalHisto->Reset(); 
-      for (Int_t i=0; i<maxPixTrasm; i++)rawSignal[i] = Double_t(fRawSignal[i]);
-      RawSignalHisto->FillN(maxPixTrasm, Chans, rawSignal, 1);
-      RawSignalHisto->Draw();
-      fDisplayRawSigCanvas->Update();
-    }
+ 
   if (!gROOT->GetListOfCanvases()->FindObject(fDisplayCanvas))
     {
       fDisplayCanvas = new TCanvas("Single event display", "Single event display", 10, 120, 800, 800);

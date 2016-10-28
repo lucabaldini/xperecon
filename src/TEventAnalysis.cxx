@@ -36,7 +36,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   dataflistname  = workingDir + "/" + _dflist;    // data file list  
 
   if (VLEVEL > 1)
-    cout << "[" << progName << " -   DEBUG] before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
+    cout << "[" << progName << " -   DEBUG] before: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << endl;
 
   /* Default parameters */
   if (is_batch) {  // Batch: set parameters now. Interactive: already got from GUI
@@ -45,8 +45,6 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
     W3 = 0.05;   // WeightLengthScale
     W4 = 11;     // PixelThreshold  
     W5 = 1;      // FixThrFlag
-    W6 = false;  // RawSignalSave
-    W7 = false;  // FullFrameFlag
     
     /* Read parameters from config file and overwrite defaults if any */
     if ((gSystem->AccessPathName(configfilename, kFileExists))) 
@@ -64,9 +62,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
       string w3("WeightLengthScale");
       string w4("PixelThreshold");
       string w5("FixThrFlag");
-      string w6("RawSignalSave");
-      string w7("FullFrameFlag");
-      
+       
       if (VLEVEL >= 0) 
 	cout << "[" << progName << " - MESSAGE] Reading parameters: " << endl;
       while ( getline(_configfile,line) ) {
@@ -81,8 +77,6 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
 	if ( strstr(_param.c_str(), w3.c_str()) ) W3 = _val;
 	if ( strstr(_param.c_str(), w4.c_str()) ) W4 = _val;
 	if ( strstr(_param.c_str(), w5.c_str()) ) W5 = _val;
-	if ( strstr(_param.c_str(), w6.c_str()) ) W6 = _val;
-	if ( strstr(_param.c_str(), w7.c_str()) ) W7 = _val;
       }
       _configfile.close();
     }
@@ -90,7 +84,7 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   }
 
   if (VLEVEL > 1)
-    cout << "[" << progName << " -   DEBUG] after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << ' ' << W6 << ' ' << W7 << endl;
+    cout << "[" << progName << " -   DEBUG] after: W... " << W1 << ' ' <<  W2 << ' ' <<  W3 << ' ' <<   W4 << ' ' << W5 << endl;
 
   /* Set parameters */
   SmallRadius     = W1; 
@@ -98,8 +92,6 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   Weight          = W3;       
   fPixelThreshold = W4;
   ThfixFlag       = W5;
-  RawFlag         = W6;
-  //FFflag        = W7;
 
   /* Manage output files */
   rootExt = "_TH";
@@ -113,7 +105,6 @@ void TEventAnalysis::Init(Int_t VLEVEL, char* _name, char* _dflist )
   _infofile << "WeightLengthScale: " << Weight << endl;
   _infofile << "PixelThreshold:    " << fPixelThreshold << endl;
   _infofile << "FixThrFlag:        " << ThfixFlag << endl;
-  _infofile << "RawSignalSave:     " << RawFlag << endl;
   _infofile.close();
   if (VLEVEL >= 0) 
     cout << "[" << progName << " - MESSAGE] Current config written in file " << infofilename << endl;
@@ -192,8 +183,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
   if (RTFlag) InitializeEventsTree();
 
   gSystem->ChangeDirectory(workingDir);
-  if ((!gSystem->AccessPathName("RawSignals.root", kFileExists)) && (!RawFlag)) 
-    gSystem->Rename("RawSignals.root","RawSignals_old.root");
 
   /* start LOOP on Input files */
   while ((el = (TObjString *) next())){
@@ -218,11 +207,9 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
  
       if (_dataFile.Contains(".root")) MCflag = 1;        // MonteCarlo data
       if (_dataFile.Contains(".mdat")) NewDataFlag = 1;   // ROI data from new chip3 (Still not ped subtracted)
-      //if (_dataFile.Contains("fullFrame_")) FFflag = 1;   // Full Frame data
 
       InitializeClusterTree(_rootFile);
-      if ( RawFlag && NewDataFlag ) InitializeRawSignalTree();
-
+  
       gSystem->ChangeDirectory(workingDir);   
       string mapName;
       mapName = "pixmap_xpe.fits";
@@ -326,7 +313,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	     
 	    Int_t NbClusters = Polarimeter->FindClusters();
 	    if (Polarimeter->GetRcounter()) Rcounter++;
-	    if (RawFlag) SaveRawSignal(nClusEvents);
 	    if (!NbClusters)
 	      {
 		//cout << "nClusEvents:  " << nClusEvents << "   NClusters:  " << NbClusters << " ---> NO CLUSTER FOUND in tot ev " << nTotEvents <<  endl;
@@ -336,7 +322,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	    else {
 	      //cout << " OK nClusEvents: " << nClusEvents << " toteV " << nTotEvents << endl;
 	      if (RTFlag && NbClusters==1) SaveEventsTree(NbClusters,nClusEvents);
-	      if (RawFlag && NbClusters>=1 && NewDataFlag) SaveRawSignal(nClusEvents);
 	      if (NbClusters>=1) SaveClusters(NbClusters,nClusEvents);
 	    }
 	  }// end while
@@ -360,7 +345,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 
 	if (RTFlag&&nClusEvents) WriteEventsTree();
 	WriteClusterTree(_rootFile);
-	if (RawFlag&&NewDataFlag&&nClusEvents) WriteRawSignalTree();
 	//if (nClusEvents) DrawCumulativeHitMap(nClusEvents);   // FS Batch!
 
 	CloseFiles();	   
@@ -381,22 +365,6 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
   return;
 }
 
-
-
-void TEventAnalysis::InitializeRawSignalTree() {
-  RawSignalFile = new TFile("RawSignals.root", "RECREATE");
-  cout << "[" << progName << " - MESSAGE] Initializing RawSignals Tree... ONLY for events read in Window mode!!! ";
-  nchans = GetNchans();
-  fRawTree = new TTree("RawSignaltree","Raw Signal");
-  fRawTree->Branch("fEventId", &fEventId, "fEventId/I");
-  fRawTree->Branch("nchans",&nchans,"nchans/I");
-  fRawTree->Branch("fRawSignal",fRawSignal, "fRawSignal[nchans]/F");
-  cout << "... done! " << endl;
-  return;
-}
-
-
-
 void TEventAnalysis::InitializeClusterTree(TString rootFile) {
   DataAnalizedFile = new TFile(rootFile, "RECREATE");
   cout << "[" << progName << " - MESSAGE] Initializing Clusters Tree";
@@ -408,6 +376,13 @@ void TEventAnalysis::InitializeClusterTree(TString rootFile) {
   fTree->Branch("fTimeTick",&fTimeTick,"fTimeTick/l");//https://root.cern.ch/root/html534/TBranch.html
   fTree->Branch("fTimeStamp",&fTimeStamp,"fTimeStamp/D");
   fTree->Branch("fbufferId",&fbufferId,"fbufferId/I");
+
+  fTree->Branch("ROI", ROI,"ROI[4]/I");
+  fTree->Branch("fPHBXpixels", &fPHBXpixels, "fPHBXpixels[fNClusters]/F"); //sum of PHs of border pixels
+  fTree->Branch("fNBXpixels", &fNBXpixels, "fNBXpixels[fNClusters]/I");   //number of border pixels
+  fTree->Branch("fPHBYpixels", &fPHBYpixels, "fPHBYpixels[fNClusters]/F"); //sum of PHs of border pixels
+  fTree->Branch("fNBYpixels", &fNBYpixels, "fNBYpixels[fNClusters]/I");   //number of border pixels
+
   fTree->Branch("fCluSize", &fCluSize, "fCluSize[fNClusters]/I"); 
   fTree->Branch("fXpixel", fXpixel,"fXpixel[fNClusters][400]/F"); //One dim MUST be fixed   
   fTree->Branch("fYpixel", fYpixel,"fYpixel[fNClusters][400]/F"); //Chosen 400 as the MAXCLUSIZE
@@ -455,14 +430,6 @@ void TEventAnalysis::InitializeEventsTree(){
 }
 
 
-void TEventAnalysis::SaveRawSignal(Int_t nClusEvents) {
-  fEventId   = nClusEvents+1;
-  for (Int_t j=0; j<nchans; j++)fRawSignal[j] = Polarimeter->fROIRawData[j];
-  fRawTree->Fill();
-  return;
-}
-
-
 void TEventAnalysis::SaveClusters(Int_t NbClusters, Int_t nClusEvents){
   fEventId   = nClusEvents;
   fNClusters = NbClusters;
@@ -476,6 +443,7 @@ void TEventAnalysis::SaveClusters(Int_t NbClusters, Int_t nClusEvents){
       sort(Polarimeter->fAllClusts, Polarimeter->fAllClusts + NbClusters, sort_by_ph2);
     }
   for (Int_t i=0; i<NbClusters; i++){
+    for(int k=0;k<4;k++) ROI[k] = Polarimeter->Roi[k]; //read window bounder 
     fPHeight[i]            = Polarimeter->fAllClusts[i]->fPulseHeight;
     fStoN [i]              = Polarimeter->fAllClusts[i]->fSignalToNoise;
     fTotNoise[i]           = Polarimeter->fAllClusts[i]->fTotalNoise;
@@ -513,6 +481,34 @@ void TEventAnalysis::SaveClusters(Int_t NbClusters, Int_t nClusEvents){
       fXpixel[i][j] = x;
       fYpixel[i][j] = y;
       fPHpixel[i][j] = height;
+
+      if(fUpixel[i][j]==ROI[2] || fUpixel[i][j]==ROI[3]){
+	fNBXpixels[i]++;
+	fPHBXpixels[i]+=fPHpixel[i][j];
+      }
+   
+      if(fVpixel[i][j]==ROI[0]){
+	fNBYpixels[i]++;
+	fPHBYpixels[i]+=fPHpixel[i][j];
+	if(ROI[0]<299 && fVpixel[i][j]==ROI[1]+1){
+	  fNBYpixels[i]++;
+	  fPHBYpixels[i]+=fPHpixel[i][j];
+	}
+      }
+    
+      if(fVpixel[i][j]==ROI[1]){
+	fNBYpixels[i]++;
+	fPHBYpixels[i]+=fPHpixel[i][j];
+	if(ROI[1]>0 && fVpixel[i][j]==ROI[1]-1){ 
+	  fNBYpixels[i]++;
+	  fPHBYpixels[i]+=fPHpixel[i][j];
+	}
+      }
+    }
+
+    if(i==0 && (fNBYpixels[i]>0||fNBXpixels[i]>0)) {
+      //cout << "ev: " << nClusEvents-1 << " -- ROI: " << ROI[0] << " -- " << ROI[1] << " -- " << ROI[2] << " -- " << ROI[3] << endl;
+      cout << "[" << progName << " - MESSAGE] NeV: " << nClusEvents-1 << "  --> NBY: " << fNBYpixels[i] << " -- NBX: " << fNBXpixels[i] << endl;
     }
     delete Polarimeter->fAllClusts[i];  //free memory
     Polarimeter->fAllClusts[i] = 0;
@@ -543,18 +539,6 @@ void TEventAnalysis::SaveEventsTree(Int_t NbClusters, Int_t nClusEvents){
   return;
 }
 
-
-void TEventAnalysis::WriteRawSignalTree(){
-  RawSignalFile->cd();
-  fRawTree->Write();
-  cout << "[" << progName << " - MESSAGE] Writing Raw Signals in root file ==>> RawSignals.root" << endl;
-  delete fRawTree;
-  RawSignalFile->Close();
-  delete RawSignalFile;
-  return;
-}
-
-
 void TEventAnalysis::WriteClusterTree(TString rootFile){
   DataAnalizedFile->cd();
   fTree->Write();
@@ -577,72 +561,6 @@ void TEventAnalysis::WriteEventsTree(){
 }
 
 
-/*
-void TEventAnalysis::DrawCumulativeHitMap(Int_t nClusEvents){  
-  // Display cumulative Hitmap!
-  Float_t DeathThreshold = nClusEvents/10.0;
-  if(fCumulativeHitmapCanvas>0){
-    delete fCumulativeHitmapCanvas;
-    fCumulativeHitmapCanvas = 0;
-  }
-  if(!fCumulativeHitmapCanvas)fCumulativeHitmapCanvas = new TCanvas("Cumulative Hitmap", " Cumulative Hitmap", 900, 10, 1000, 500);
-  fCumulativeHitmapCanvas->SetFillColor(10);
-
-  if(fCumulativeHitmapHisto>0){
-    delete fCumulativeHitmapHisto;
-    fCumulativeHitmapHisto = 0;
-  }
-  if(!fCumulativeHitmapHisto)fCumulativeHitmapHisto = new TH1F("Cumulative Hitmap", "Cumulative Hitmap", NCHANS, 0, NCHANS);
-  Float_t MaxHitmap = 0;
-  for (Int_t ch=0; ch<NCHANS; ch++){
-    fCumulativeHitmapHisto->SetBinContent(ch+1, Polarimeter->fCumulativeHitmap[ch]);
-    if (Polarimeter->fCumulativeHitmap[ch]>MaxHitmap) MaxHitmap = Polarimeter->fCumulativeHitmap[ch];
-  }
-  fCumulativeHitmapHisto->Draw(); 
-  fCumulativeHitmapCanvas->Update();
-
-  if(fCumulativeHitmapCanvas2D>0){
-    delete fCumulativeHitmapCanvas2D;
-    fCumulativeHitmapCanvas2D = 0;
-  }
-  if(!fCumulativeHitmapCanvas2D)fCumulativeHitmapCanvas2D = new TCanvas("Cumulative Hitmap 2D", " Cumulative Hitmap 2D", 900, 200, 700, 700);
-  fCumulativeHitmapCanvas2D->SetFillColor(10);
-  ifstream PxFile;
-  PxFile.open("pixmap.dat", ios::in);
-  PixelHit pix;
-  THexagonCol *hexagon;
-  Int_t DummyInt;
-  Char_t DummyChar[10];
-  Bool_t Border;
-  Int_t MediumX, MediumY;
-  PxFile >> MediumX >> MediumY;
-  gPad->Range(-MediumY*PITCH, -MediumY*PITCH, MediumY*PITCH, MediumY*PITCH);
-  for(Int_t k=0;k<7;k++)PxFile >> DummyChar;
-  for (Int_t ch=0; ch<NCHANS; ch++){
-    PxFile >> pix.X;
-    PxFile >> pix.Y;
-    PxFile >> DummyInt >> DummyInt >> DummyInt >> DummyInt >> Border;
-    // If the pixel is on the border, draw a red hexagon, full scale!
-    if (Border){
-      pix.Height = PITCH/2;
-      hexagon = new THexagonCol(pix);
-      hexagon->DrawEmpty(kRed);
-      delete hexagon;
-    }
-    if (Polarimeter->fCumulativeHitmap[ch] > DeathThreshold){
-      pix.Height = Polarimeter->fCumulativeHitmap[ch]/MaxHitmap*PITCH/2;
-      hexagon = new THexagonCol(pix);
-      hexagon->DrawEmpty(kBlack);
-      delete hexagon;
-    }
-  }
-  fCumulativeHitmapCanvas2D->Update();
-  PxFile.close();
-  return;
-}
-*/
-
-
 Int_t TEventAnalysis::GetRunId(TString RunIdName)
 {
   cout << "[" << progName << " - MESSAGE] GetRunId::RunId Name = " << RunIdName << " " << endl;
@@ -655,8 +573,7 @@ Int_t TEventAnalysis::GetRunId(TString RunIdName)
   }
   RunIdName.Remove(0, lastMarker+1);
   cout << "[" << progName << " - MESSAGE] GetRunId::RunId = " << RunIdName << " " << endl;
-  //UInt_t RunId = (UInt_t) RunIdName.Data();
-      
+  //UInt_t RunId = (UInt_t) RunIdName.Data();     
   return 0;// for now!!!
 }
 
@@ -672,9 +589,10 @@ void TEventAnalysis::CloseFiles(){
 }
 
 
-
 void TEventAnalysis::ClearArrays(Int_t NbClusters){
   for (Int_t i=0; i<NbClusters; i++){
+    fNBXpixels[i] = fPHBXpixels[i] = 0;
+    fNBYpixels[i] = fPHBYpixels[i] = 0;
     fPHeight[i] = fStoN [i] = fTotNoise[i] = fHighestC [i]= 0;
     fBaricenterX[i] = fBaricenterY[i] = 0;
     fTheta0[i] = fTheta1[i] = fThetaDifference[i] = 0;

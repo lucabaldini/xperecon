@@ -104,7 +104,6 @@ typedef Int_t MatrixInt_t[PIX_R_DIM][PIX_C_DIM];
 typedef UShort_t MatrixUshort_t[PIX_R_DIM][PIX_C_DIM];
 
 enum {HEADON, THFIX, FILE_OPEN, WEXIT, SEL_EV, SLIDER_EV,   
-      OR, AND, ABOUT, UPDATEPED, UPDATEDATA,
-      CHKRAW, WLEN, BLUE, RED, NUMEV};
+      OR, AND, ABOUT, UPDATEPED, UPDATEDATA, WLEN, BLUE, RED, NUMEV};
 
 #endif

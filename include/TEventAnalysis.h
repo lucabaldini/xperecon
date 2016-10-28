@@ -14,7 +14,6 @@
 class TEventAnalysis {
 
  private:
-  //TString     progName;
   char*       progName;
   TString     workingDir;
   TString     outputDir;
@@ -30,8 +29,7 @@ class TEventAnalysis {
   Int_t       Rcounter;
   Int_t       Nevent;
   Int_t       Clusterdim;
-  //Int_t       FFflag;
-  Int_t       RTFlag, RawFlag, MCflag, NewDataFlag, ThfixFlag; 
+  Int_t       RTFlag, MCflag, NewDataFlag, ThfixFlag; 
   UInt_t      fRunId;
   Int_t       fEventId;
   Int_t       fNClusters, fTrigWindow, fbufferId;
@@ -44,11 +42,17 @@ class TEventAnalysis {
   TDetector   *Polarimeter;
   Float_t     W1, W2, W3;
   Int_t       W4, W5;
-  bool        W6, W7;
   Double_t    Phi;
   Int_t       Channel[MAXCLUSIZE];
   Int_t       Charge[MAXCLUSIZE];
   Int_t       DigiCharge[MAXCLUSIZE];
+
+  Int_t       ROI[4];
+  Int_t       fNBXpixels[MAXNUMCLUSTS];
+  Float_t     fPHBXpixels[MAXNUMCLUSTS];
+  Int_t       fNBYpixels[MAXNUMCLUSTS];
+  Float_t     fPHBYpixels[MAXNUMCLUSTS];
+
   Int_t       fCluSize[MAXNUMCLUSTS];
   Float_t     fXpixel[MAXNUMCLUSTS][MAXCLUSIZE];
   Float_t     fYpixel[MAXNUMCLUSTS][MAXCLUSIZE];
@@ -86,18 +90,14 @@ class TEventAnalysis {
   inline Int_t GetNchans() {return maxPixTrasm;}
   inline void SetDatafilesList(TList* _fileNamesList) {dataflist = _fileNamesList;}
   inline void SetWorkingdir(TString _workingdir) {workingDir = _workingdir;}
-  inline void SetDefaults(Float_t _w1, Float_t _w2, Float_t _w3, Int_t _w4, Int_t _w5, bool _w6) {W1 = _w1; W2 = _w2; W3 = _w3; W4 = _w4; W5 = _w5; W6 = _w6; };
+  inline void SetDefaults(Float_t _w1, Float_t _w2, Float_t _w3, Int_t _w4, Int_t _w5) {W1 = _w1; W2 = _w2; W3 = _w3; W4 = _w4; W5 = _w5; };
   Int_t GetRunId(TString);
-  void  InitializeRawSignalTree();
   void  InitializeClusterTree(TString);
   void  InitializeEventsTree();
-  void  SaveRawSignal(Int_t);
   void  SaveClusters(Int_t, Int_t);
   void  SaveEventsTree(Int_t, Int_t);
-  void  WriteRawSignalTree();
   void  WriteEventsTree();
-  void  WriteClusterTree(TString);
-  //  void  DrawCumulativeHitMap(Int_t);
+  void  WriteClusterTree(TString); 
   void  CloseFiles();
   void  ClearArrays(Int_t);
   //ClassDef(TEventAnalysis,0);

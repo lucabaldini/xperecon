@@ -42,14 +42,14 @@ class TMainGUI: public TGMainFrame{
   TGCompositeFrame *fDataEvFrame, *fDataEvFrame1, *fWeightFrame, *fSradiusFrame, *fWradiusFrame;
   TGLayoutHints    *fMenuBarLayout, *fMenuBarItemLayout, *fMenuBarHelpLayout;	
   TGLayoutHints    *fButtonLayout, *fAnalysisLayout;
-  TGButton         *fDisplayEventButton, *fAnalizeDataButton, *fCheck1;
+  TGButton         *fDisplayEventButton, *fAnalizeDataButton;
   TGCheckButton    *fThfix, *fHeadToFile;
 
   TGTextBuffer     *fEvData, *fEvData1;
   TGTextBuffer     *fW1, *fW2, *fW3;
   TGTextBuffer     *fThresholdBuf;
   Int_t            ThfixFlag, RawFlag;
-  TString          W1, W2, W3, W4, W5, W6, W7, W8;
+  TString          W1, W2, W3, W4, W5;
 
   TGPopupMenu      *fPopupMenu, *fPopupHelp;
   TGMenuBar        *fMenuBar;
@@ -59,22 +59,6 @@ class TMainGUI: public TGMainFrame{
   Int_t            buttons, retval;
   Bool_t           HeaderOn;
 
-  ///// Obsolete? [FS 2016-10-27]
-  TCanvas          *fHistosCanvas, *Canvas, *Canvas0, *Canvas1;
-  TCanvas          *fCumulativeHitmapCanvas2D;
-  TH1S *RawPedsHistos[NCHANS];
-  TH1F *MeanPedsHisto;
-  TH1F *RMSPedsHisto;	  
-  TH1F *AveragePedsHisto;
-  TH1F *SigmaPedsHisto;
-  TH1F *noise;
-  TF1  *gfit; 
-  const char* dir0;
-  ifstream pUpdatePedFile, pUpdateDataFile; 
-  ifstream inPeds;
-  ofstream outPeds;
-  //////
-  
  public:
 
   TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t, char*);

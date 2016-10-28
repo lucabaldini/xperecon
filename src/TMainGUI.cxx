@@ -109,17 +109,7 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t VLEVEL, char* _n
   fDataThresholdEntry->SetToolTipText("Insert the threshold for noise rejection (number of STDs)");
   fDataThresholdFrame->AddFrame(fDataThresholdEntry, new TGLayoutHints(kLHintsExpandX | kLHintsTop, 4, 4, 4, 4));
   fDataFrame->AddFrame(fDataThresholdFrame, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0));
- 
-  fDataFrame->AddFrame(fCheck1 = new TGCheckButton(fDataFrame, "Save Raw Signal", CHKRAW),new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
-  fCheck1->Associate(this);
-  if (atoi(W6) ) {
-    fCheck1->SetState(kButtonDown);
-    RawFlag = 1;
-  }
-  else {
-    fCheck1->SetState(kButtonUp);
-    RawFlag = 0;
-  }
+
   fTitleSradius = new TGLabel(fSradiusFrame, new TGString("SmallCircleRadius:"));
   fSradiusFrame->AddFrame(fTitleSradius, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 4, 4, 4, 4));
   fSradiusEntry = new TGTextEntry(fSradiusFrame, fW1 = new TGTextBuffer(80));
@@ -164,14 +154,10 @@ TMainGUI::TMainGUI(const TGWindow *p, UInt_t w, UInt_t h, Int_t VLEVEL, char* _n
   Resize(550, 450);
   MapWindow();
   Move(100,10);
-  
-  fCumulativeHitmapCanvas2D = 0;
-}
+ }
 
 
 TMainGUI::~TMainGUI() {
-
-  if (fHistosCanvas) delete fHistosCanvas;
   delete fMainFrameHor;
   delete fMainFrameVert;
  
@@ -193,7 +179,6 @@ TMainGUI::~TMainGUI() {
  
   delete fAnalizeDataButton;
   delete fDisplayEventButton;
-  delete fCheck1;
   delete fDataEvEntry;
 
   delete fEvData;
@@ -229,18 +214,6 @@ Bool_t TMainGUI::ProcessMessage(Long_t msg, Long_t par1, Long_t){
 	else {
 	  HeaderOn = false;
 	  cout << "headerOff" << endl;
-	}
-	break;
-
-      case  CHKRAW:
-	if (fCheck1->GetState()) {
-	  RawFlag = 1;
-	  cout << "\n===>> Raw Signals will be saved in file RawSignals.root!!"<< endl; 
-	  box = new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(),"Message", 
-			     "Raw Signals will be saved in file RawSignals.root ONLY for data taken in Window mode!!!", icontype, buttons, &retval);
-	}
-	else {
-	  RawFlag = 0;
 	}
 	break;
 
@@ -316,9 +289,9 @@ void TMainGUI::DataAnalysis()
   Float_t guiW3 = atof(fW3->GetString());
   Float_t guiW4 = atof(fThresholdBuf->GetString());
   Int_t guiW5 = ThfixFlag;
-  Int_t guiW6 = RawFlag;
   cout << "guiW1 " << guiW1 << "  W1 " << atof(W1.Data()) << endl;
-  tEventAnalysis->SetDefaults(guiW1, guiW2, guiW3, guiW4, guiW5, guiW6);
+  tEventAnalysis->SetDefaults(guiW1, guiW2, guiW3, guiW4, guiW5);
+
   tEventAnalysis->Init(DebugLevel, progName, NULL);
   DataPanelDisable();
   Int_t startEv = 0, stopEv = 0;
@@ -352,7 +325,6 @@ void TMainGUI::DataPanelDisable()
   fAnalizeDataButton->SetState(kButtonDisabled);
   fDisplayEventButton->SetState(kButtonDisabled);
   fDataThresholdEntry->SetState(false);
-  fCheck1->SetEnabled(false);
   fHeadToFile->SetEnabled(false);
   fSradiusEntry->SetState(false);
   fWradiusEntry->SetState(false);
@@ -367,7 +339,6 @@ void TMainGUI::DataPanelEnable()
   fAnalizeDataButton->SetState(kButtonUp);
   fDisplayEventButton->SetState(kButtonUp);
   fDataThresholdEntry->SetState(true);
-  fCheck1->SetEnabled(true);
   fHeadToFile->SetEnabled(true);
   fSradiusEntry->SetState(true);
   fWradiusEntry->SetState(true);
@@ -385,7 +356,6 @@ void TMainGUI::Init()
     infofilein >> W3 >> W3;
     infofilein >> W4 >> W4; 
     infofilein >> W5 >> W5;
-    infofilein >> W6 >> W6;
   }
   else {         // default conditions
     W1 = "1.5";  // Small Radius
@@ -393,11 +363,7 @@ void TMainGUI::Init()
     W3 = "0.05"; // Weight
     W4 = "11";   // Threshold  
     W5 = "1";    // Fixed Threshold Flag
-    W6 = "0";    // Raw signal Flag
   }
-
-  W7 = "0";      // FullFrame Flag
 }
-
 
 ClassImp(TMainGUI)

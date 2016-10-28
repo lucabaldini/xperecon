@@ -18,6 +18,14 @@ private:
   Int_t fNClusters;
   Double_t fTimeStamp, T0, T1, TSi, TSf;
   Int_t fTrigWindow, fbufferId;
+
+  Int_t ROI[4];
+  Float_t xx1,yy1,xx2,yy2;
+  Int_t fNBXpixels[MAXNUMCLUSTS];
+  Float_t fPHBXpixels[MAXNUMCLUSTS];
+  Int_t fNBYpixels[MAXNUMCLUSTS];
+  Float_t fPHBYpixels[MAXNUMCLUSTS];
+
   Int_t fCluSize[MAXNUMCLUSTS];
   Float_t fPHeight[MAXNUMCLUSTS];
   Float_t fStoN[MAXNUMCLUSTS];  
@@ -40,8 +48,6 @@ private:
   Float_t fXpixel[MAXNUMCLUSTS][MAXCLUSIZE];
   Float_t fYpixel[MAXNUMCLUSTS][MAXCLUSIZE];
   Float_t fPHpixel[MAXNUMCLUSTS][MAXCLUSIZE];
-  Float_t fRawSignal[maxPixTrasm];
-  Double_t rawSignal[maxPixTrasm];
   Float_t fCluLenght[MAXNUMCLUSTS];
 
   Int_t ncluMax, MaxCluster;
@@ -51,14 +57,13 @@ private:
   Int_t buttons;
   Int_t retval;
   Int_t ColScale;
-  Int_t RawSignalFlag;
   Int_t EvtNb;
   Float_t ReCenterX, ReCenterY;
   Float_t Shift;
   Int_t NumberOfEvts;
   Float_t  PulseLoThresh,PulseHiThresh,PulseLoThresh1,PulseHiThresh1,NClustLoThresh,NClustHiThresh;
   Float_t StoNLoThresh, StoNHiThresh, CluSizeLoThresh, TrWinLoThresh, TrWinHiThresh;
-  Float_t  CluSizeHiThresh, ShapeLoThresh, ShapeHiThresh, M3LoThresh, M3HiThresh;
+  Float_t CluSizeHiThresh, ShapeLoThresh, ShapeHiThresh, M3LoThresh, M3HiThresh;
   Double_t Signal[NCHANS];
   Int_t OrFlag, AndFlag;
   Float_t *ZoomWindow;
@@ -87,7 +92,7 @@ private:
   Float_t XEllipseCut, YEllipseCut, R1EllipseCut, R2EllipseCut, ThetaEllipseCut;
 
   TString datadir;
-  string workingdir, fullpath;
+  string  workingdir, fullpath;
   TString infodispfn, infofn;
   TString cludata;
   TString num;
@@ -98,9 +103,9 @@ private:
   TString fNClustLow, fNClustHigh, fSignalLow, fSignalHigh;
   TString fShapeLow, fShapeHigh, fM3Low, fM3High, fCluSizeLow, fCluSizeHigh;
 
-  TCanvas           *fDisplayCanvas, *fCluHistosCanvas, *fDisplayRawSigCanvas, *fDisplay2Canvas;
+  TCanvas           *fDisplayCanvas, *fCluHistosCanvas, *fDisplay2Canvas;
   TCanvas           *nCanvas, *newCanvas;
-  TColor *color;
+  TColor            *color;
   TGGroupFrame      *fEvSelectFrame, *fCluCutFrame, *fCluDisplayFrame, *fBrowsingFrame;
   TGCompositeFrame  *fMainFrame, *fHorFrame; 
   TGVerticalFrame   *fVframe1, *fVframe2;
@@ -154,8 +159,8 @@ private:
   TObjArray         *histList;
   TObjArray         *branchList;
 
-  TFile             *Clusterdatafile, *RawSignalFile;
-  TTree             *ClusterTree, *RawTree;
+  TFile             *Clusterdatafile;
+  TTree             *ClusterTree;
   TBranch           *branchobj;
 
   TLine             *ProjectedBaryCenterLine;
@@ -171,6 +176,7 @@ private:
   TGaxis            *EvtZoomXAxis;
   TGaxis            *EvtZoomYAxis;
 
+  TLine             *window;
   TLine             *EvtXLine;
   TLine             *EvtYLine;
   TLine             *EvtZoomXLine;
@@ -180,7 +186,6 @@ private:
   TF1               *PhiFunction0;
   TF1               *PHeightFunction;
   TH1F              *ProjectionHisto;
-  TH1F              *RawSignalHisto;
   TH1F              *fPHeightHisto;
   TH1F              *fStoNHisto;
   TH1F              *fCluSizeHisto;
@@ -221,7 +226,6 @@ private:
   void SelectAnalisedFile();
   void NextEv();
   void PrevEv();
-  void DisplayRawEv();
   void DisplayEv();
   void DrawCircle();
   void SelectEv();

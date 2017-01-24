@@ -1,0 +1,57 @@
+import ROOT
+import sys
+
+try:
+    filepath = sys.argv[1]
+except:
+    print("please provide a valid file path")
+
+
+    
+t = ROOT.TChain('tree')
+t.Add(filepath)
+print('Number of events %d' % t.GetEntries())
+
+CUT = "abs(fBaricenterY[0]-5)<1 && abs(fBaricenterX[0]+5)<1"
+
+c = ROOT.TCanvas("c", "c", 800, 600)
+c.Divide(2,1)
+c.cd(1)
+t.Draw("fBaricenterY[0]:fBaricenterX[0]>>hh(160,-8,8,160,-8,8)", CUT, "colz")
+
+myTxt = ROOT.TLatex()
+myTxt.SetTextFont(42)
+
+c.cd(2)
+hPHeight = ROOT.TH1F("hPHeight", "hPHeight", 1000,0, 10000)
+t.Draw("fPHeight[0]>>hPHeight", CUT)
+
+print("\n FIT MAIN PEAK")
+peak = hPHeight.GetBinCenter(hPHeight.GetMaximumBin())
+rms  = hPHeight.GetRMS()
+g0 = ROOT.TF1("g0", "gaus", peak-rms, peak+rms)
+hPHeight.Fit("g0", "R")
+myTxt.DrawLatexNDC(0.6, 0.75, "Main Peak:")
+myTxt.DrawLatexNDC(0.6, 0.7, "Ave %d" %(g0.GetParameter(1)))
+myTxt.DrawLatexNDC(0.6, 0.65, "FWHM %.2f%%" %(235.*g0.GetParameter(2)/g0.GetParameter(1)))
+g0.Draw("same")
+
+print("\n FIT ESC. PEAK")
+esc  = g0.GetParameter(1)/2
+rms1 = g0.GetParameter(2)
+g1 = ROOT.TF1("g1", "gaus", esc-rms1, esc+rms1)
+g1.SetLineColor(3)
+hPHeight.Fit("g1", "R")
+g1.Draw("same")
+myTxt.DrawLatexNDC(0.6, 0.6, "Esc Peak:")
+myTxt.DrawLatexNDC(0.6, 0.55, "Ave %d" %(g1.GetParameter(1)))
+myTxt.DrawLatexNDC(0.6, 0.5, "FWHM %.2f%%" %(235.*g1.GetParameter(2)/g1.GetParameter(1)))
+
+c.Update()
+
+
+
+
+
+
+

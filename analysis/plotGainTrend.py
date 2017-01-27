@@ -52,7 +52,7 @@ print('TimeOffset %f' %TimeOffset)
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minTime    = 0 # by definition
 maxTime    = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
-Nbins      = int((maxTime-minTime)/TimeBin)
+Nbins      = max(1, int((maxTime-minTime)/TimeBin))
 timeBins   = np.linspace(0,maxTime, Nbins+1)
 print "Eval trend from %f hr to %f hr after start in %d bins" %\
     (min(timeBins), max(timeBins), len(timeBins))

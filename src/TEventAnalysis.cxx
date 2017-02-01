@@ -308,7 +308,7 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	      continue;
 	    }
 	     
-	    if ( !((nTotEvents-startEv)%100) ) 
+	    if ( !((nTotEvents-startEv) % 5000) ) 
 	      cout << "[" << progName << " - RUNNING] " << (nTotEvents-startEv) << " events analized starting from ev: " << startEv << endl;
 	     
 	    Int_t NbClusters = Polarimeter->FindClusters();

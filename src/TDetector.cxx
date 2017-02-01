@@ -225,7 +225,8 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
   fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
   fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
   bufferID = COMB(tmp1,tmp2);
-  
+
+  // Read the time bytes.
   fRawFile->fStream.read((Char_t*)&tmp1, sizeof(Char_t));
   fRawFile->fStream.read((Char_t*)&tmp2, sizeof(Char_t));
   time1 = COMB(tmp1,tmp2);
@@ -235,8 +236,23 @@ Int_t TDetector::ReadROInew(Int_t numEv) {
 
   tm.push_back(time2);
 
-  if(numEv>=2){
-    if((tm[numEv-1]-tm[numEv-2])<0){
+  // Handle the ms rollover.
+  // We do this by storing into a vector the most microsecond word
+  // corresponding to the most significant bits.
+  // This has been modified to patch the reconstruction for the DAW issue
+  // https://github.com/lucabaldini/xpedaq/issues/150
+  // Particularly, we're saying that the fact that the microseconds are
+  // going backwards for a particular event isn't necessarily implysing that
+  // we had a rollover of the counter, and it might just have been a glitch.
+  // There's no way to handle this properly at this level. If the rate is
+  // high enough, a proper rollover is where time2 goes 65533 -> 0. If the
+  // rate is low this is not true but, provided that we're triggering
+  // at a few Hz at least time2 must change from a number close to 65533 to
+  // a number close to 0. 
+  if(numEv >= 2) {
+    if((tm[numEv-1] - tm[numEv-2]) < 0 &&
+       tm[numEv-2] > 65513 &&
+       tm[numEv-1] < 20) {
       roll++;
     }
   }

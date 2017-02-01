@@ -508,7 +508,7 @@ void TEventAnalysis::SaveClusters(Int_t NbClusters, Int_t nClusEvents){
 
     if(i==0 && (fNBYpixels[i]>0||fNBXpixels[i]>0)) {
       //cout << "ev: " << nClusEvents-1 << " -- ROI: " << ROI[0] << " -- " << ROI[1] << " -- " << ROI[2] << " -- " << ROI[3] << endl;
-      cout << "[" << progName << " - MESSAGE] NeV: " << nClusEvents-1 << "  --> NBY: " << fNBYpixels[i] << " -- NBX: " << fNBXpixels[i] << endl;
+      //cout << "[" << progName << " - MESSAGE] NeV: " << nClusEvents-1 << "  --> NBY: " << fNBYpixels[i] << " -- NBX: " << fNBXpixels[i] << endl;
     }
     delete Polarimeter->fAllClusts[i];  //free memory
     Polarimeter->fAllClusts[i] = 0;

@@ -37,7 +37,8 @@ else:
     sys.exit(1)
 
 #CUT = "abs(fBaricenterY[0]-5)<1 && abs(fBaricenterX[0]+5)<1"
-CUT = "(1)"
+CUT = "abs(fBaricenterY[0]-4)<1 && abs(fBaricenterX[0]+4)<1"
+#CUT = "(1)"
 
 c = ROOT.TCanvas("plot_%s"%Label, "plot_%s"%Label, 800, 600)
 c.Divide(2,1)

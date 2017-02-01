@@ -1,5 +1,5 @@
 SmallRadius:       1.7
 WideCircleRadius:  3.5
 WeightLengthScale: 0.05
-PixelThreshold:    8
+PixelThreshold:    5
 FixThrFlag:        1

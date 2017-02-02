@@ -141,9 +141,12 @@ def plotGEMUniformities():
     matplotlib.rc('figure', facecolor='white') 
   
     fig = plt.figure()
- 
-    x,y,num_events,fwhm,peak,fwhm1 = numpy.loadtxt(output_file_name, delimiter=',', unpack=True)
-     
+    if os.path.isfile(output_file_name):
+        x,y,num_events,fwhm,peak,fwhm1 = numpy.loadtxt(output_file_name, delimiter=',', unpack=True)
+    else:
+        print "Results file %s does not exist, you may need to perform the runScan method first!"%output_file_name
+        sys.exit(1)
+        
     x_bins = numpy.linspace(min_bound, max_bound, num_points)
     y_bins = numpy.linspace(min_bound, max_bound, num_points)
 

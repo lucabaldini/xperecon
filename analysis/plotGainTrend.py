@@ -13,6 +13,8 @@ parser.add_argument('-c', '--cut', type=str, default='1',
                     help='ROOT-valid cut string')
 parser.add_argument('-s', '--saveplot', action='store_true',
                     help='flag to save final plot')
+parser.add_argument('-o', '--saveout', action='store_true',
+                    help='flag to save final data in a txt file')
 parser.add_argument('-t', '--timebin', type=float, default=1.0,
                         help='time interval in hours ')
 args = parser.parse_args()
@@ -21,6 +23,7 @@ args = parser.parse_args()
 Label    = args.label
 TimeBin  = args.timebin #hours
 SavePlot = args.saveplot
+SaveOutput = args.saveout
 nsigfit  = 1.5
 CUT      = '(%s)' %args.cut
 minEvtInHist = 500
@@ -177,3 +180,18 @@ cTrend.Update()
 
 if SavePlot:
     cTrend.SaveAs("%s.png" % cTrend.GetName())
+
+# Save Gain and Resolution Data in a txt file
+if SaveOutput:
+    import time
+    outFileName = "gaintrend_%s.data" %Label
+    outFile = file(outFileName, "w+")
+    outFile.write("# Gain and resolution for %s \n" %Label)
+    outFile.write("# Written on %s\n" % time.ctime())
+    outFile.write("# time (hr)\tgain\tfwhm\ttimeErr\tgainErr\tfwhmErr\n")
+    for i in xrange(N):
+        outFile.write("%g\t%g\t%g\t%g\t%g\t%g\n" %\
+                      (timeX[i], gainVal[i], resVal[i],
+                       timeXErr[i], gainErr[i], resErr[i]))
+    
+    outFile.close()

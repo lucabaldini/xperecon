@@ -188,10 +188,10 @@ if SaveOutput:
     outFile = file(outFileName, "w+")
     outFile.write("# Gain and resolution for %s \n" %Label)
     outFile.write("# Written on %s\n" % time.ctime())
-    outFile.write("# time (hr)\tgain\tfwhm\ttimeErr\tgainErr\tfwhmErr\n")
+    outFile.write("# time (hr)\tpeak\tfwhm\ttimeErr\tpeakErr\tfwhmErr\n")
     for i in xrange(N):
         outFile.write("%g\t%g\t%g\t%g\t%g\t%g\n" %\
-                      (timeX[i], gainVal[i], resVal[i],
+                      (timeX[i]+TimeOffset, gainVal[i], resVal[i],
                        timeXErr[i], gainErr[i], resErr[i]))
     
     outFile.close()

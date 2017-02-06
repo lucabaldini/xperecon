@@ -6,7 +6,7 @@ import numpy
 class ixpePulseHeightCube(ROOT.TH3D):
 
     """Wrapper around a ROOT.TH3 object describing a count cube, i.e. a set
-    of one-dimensional count histogram onto a two-dimensional x-y grid.
+    of one-dimensional count histograms onto a two-dimensional x-y grid.
     """
 
     def __init__(self, name, title=None, num_side_bins=20, half_size=8.,
@@ -59,7 +59,11 @@ class ixpePulseHeightCube(ROOT.TH3D):
     
 
 if __name__ == '__main__':
-    input_file = ROOT.TFile('../out/001_0000490_data_TH5_outputfile.root')
+    import os
+    folder_path = '/data/xpedata/001/001_0000575'
+    file_name = '001_0000757_data_TH5_outputfile.root'
+    file_path = os.path.join(folder_path, file_name)
+    input_file = ROOT.TFile(file_path)
     tree = input_file.Get('tree')
 
     expr = 'fPHeight[0]:fBaricenterY[0]:fBaricenterX[0]'

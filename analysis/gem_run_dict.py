@@ -2,10 +2,10 @@
 
 GEM_RUN_DICT = {'gem_1413':{'unif_illumination_runs':[541, 542],
                            'Top HV':'', 'Trending time':17.9,
-                           'notes':['Some vertical stripe structures appear to be present in the hitmap.']},
+                           'notes':['Some vertical stripe structures appear to be present in the hitmap.', 'Using new fixture to set uniform illumination made by Davide.']},
                 'gem_1414':{'unif_illumination_runs':[561,562],
                            'Top HV':1475, 'Trending time':16.2,
-                            'notes':['']},
+                            'notes':['Using new fixture to set uniform illumination made by Davide.']},
                 'gem_1415':{'unif_illumination_runs':[574,575,576,577],
                            'Top HV':1475,'Trending time':46.7,
                            'notes':['']},

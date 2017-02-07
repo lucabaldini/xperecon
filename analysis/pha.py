@@ -3,6 +3,23 @@ import ROOT
 import numpy
 
 
+
+def fit_gauss(hist):
+    """
+    """
+    peak = hist.GetBinCenter(hist.GetMaximumBin())
+    rms = hist.GetRMS()
+    g0 = ROOT.TF1("g0", "gaus", peak - rms, peak + rms)
+    hist.Fit("g0", "R")
+    try:
+        fwhm = 235.*g0.GetParameter(2)/g0.GetParameter(1)
+    except:
+        print "ZeroDivision Error"
+        fwhm = 0.0
+    peak = g0.GetParameter(1)
+    return peak, fwhm
+
+
 class ixpePulseHeightCube(ROOT.TH3D):
 
     """Wrapper around a ROOT.TH3 object describing a count cube, i.e. a set
@@ -18,7 +35,7 @@ class ixpePulseHeightCube(ROOT.TH3D):
                            num_side_bins, -half_size, half_size,
                            num_side_bins, -half_size, half_size,
                            num_pha_bins, min_pha, max_pha)
-        self.__projection_dict = {}
+        self.__histogram_dict = {}
 
     def pha_histogram_name(self, i, j):
         """
@@ -38,23 +55,25 @@ class ixpePulseHeightCube(ROOT.TH3D):
         self.GetYaxis().SetRange(jmin, jmax)
         self.GetYaxis().SetBit(ROOT.TAxis.kAxisRange)
         hist = self.Project3D('z')
-        hist.SetName(self.pha_projection_name(i, j))
-        self.__projection_dict[(i, j)] = hist
+        hist.SetName(self.pha_histogram_name(i, j))
+        self.__histogram_dict[(i, j)] = hist
         return hist
 
-    def project_pha(self):
-        """Create the pulse-height projections in all the spatial bins.
+    def project_pha(self, fit=True):
+        """Create the pulse-height histograms in all the spatial bins.
         """
         for i in range(self.GetNbinsX()):
             for j in range(self.GetNbinsY()):
-                self.create_pha_histogram(i, j)
+                h = self.create_pha_histogram(i, j)
+                if fit:
+                    fit_gauss(h)
 
     def pha_histogram(self, i, j):
         """
         """
-        if not self.__projection_dict.has_key((i, j)):
+        if not self.__histogram_dict.has_key((i, j)):
             self.create_pha_histogram(i, j)
-        return self.__projection_dict[(i, j)]
+        return self.__histogram_dict[(i, j)]
 
     
 
@@ -69,7 +88,7 @@ if __name__ == '__main__':
     cube = ixpePulseHeightCube('ccube', 'Count cube')
     tree.Project('ccube', expr, cut, '', num_events)
     cube.project_pha()
-    h = cube.pha_projection(10, 10)
+    h = cube.pha_histogram(10, 10)
     h.Draw()
 
 

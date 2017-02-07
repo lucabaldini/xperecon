@@ -59,10 +59,7 @@ class ixpePulseHeightCube(ROOT.TH3D):
     
 
 if __name__ == '__main__':
-    import os
-    folder_path = '/data/xpedata/001/001_0000575'
-    file_name = '001_0000757_data_TH5_outputfile.root'
-    file_path = os.path.join(folder_path, file_name)
+    file_path = '../out/001_0000574_data_TH5_outputfile.root'
     input_file = ROOT.TFile(file_path)
     tree = input_file.Get('tree')
 

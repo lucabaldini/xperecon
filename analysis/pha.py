@@ -100,7 +100,7 @@ if __name__ == '__main__':
     h = cube.pha_histogram(10, 10)
     h.Draw()
     cube.write('./test_cube.root')
-
+    
     """
     ccube = ROOT.TH3D('ccube', 'Count cube', num_bins, -side, side, num_bins,
                   -side, side, 200, 0, 10000)

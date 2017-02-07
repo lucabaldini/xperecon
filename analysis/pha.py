@@ -75,6 +75,15 @@ class ixpePulseHeightCube(ROOT.TH3D):
             self.create_pha_histogram(i, j)
         return self.__histogram_dict[(i, j)]
 
+    def write(self, file_path):
+        """
+        """
+        output_file = ROOT.TFile(file_path, 'RECREATE')
+        self.Write()
+        for hist in self.__histogram_dict.values():
+            hist.Write()
+        output_file.Close()
+
     
 
 if __name__ == '__main__':
@@ -90,7 +99,7 @@ if __name__ == '__main__':
     cube.project_pha()
     h = cube.pha_histogram(10, 10)
     h.Draw()
-
+    cube.write('./test_cube.root')
 
     """
     ccube = ROOT.TH3D('ccube', 'Count cube', num_bins, -side, side, num_bins,

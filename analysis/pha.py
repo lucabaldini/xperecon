@@ -36,6 +36,8 @@ class ixpePulseHeightCube(ROOT.TH3D):
                            num_side_bins, -half_size, half_size,
                            num_pha_bins, min_pha, max_pha)
         self.__histogram_dict = {}
+        self.num_side_bins = num_side_bins
+        self.half_size = half_size
 
     def pha_histogram_name(self, i, j):
         """
@@ -59,15 +61,28 @@ class ixpePulseHeightCube(ROOT.TH3D):
         self.__histogram_dict[(i, j)] = hist
         return hist
 
+    def create_2d_hist(self,name):
+        hist2d = ROOT.TH2F(name, name, self.num_side_bins, -self.half_size, self.half_size, self.num_side_bins, -self.half_size, self.half_size)
+        return hist2d
+    
     def project_pha(self, fit=True):
         """Create the pulse-height histograms in all the spatial bins.
         """
+        fwhm_hist = self.create_2d_hist('FWHM')
+        main_peak_hist = self.create_2d_hist('MainPeak')
+        
         for i in range(self.GetNbinsX()):
             for j in range(self.GetNbinsY()):
                 h = self.create_pha_histogram(i, j)
                 if fit:
-                    fit_gauss(h)
+                    peak, fwhm = fit_gauss(h)
+                    fwhm_hist.SetBinContent(i+1,j+1, fwhm)
+                    main_peak_hist.SetBinContent(i+1,j+1, peak)
+        self.__histogram_dict['MainPeak'] = main_peak_hist
+        self.__histogram_dict['FWHM'] = fwhm_hist
+     
 
+        
     def pha_histogram(self, i, j):
         """
         """
@@ -93,7 +108,7 @@ if __name__ == '__main__':
 
     expr = 'fPHeight[0]:fBaricenterY[0]:fBaricenterX[0]'
     cut = ''
-    num_events = 1000000
+    num_events = 100000000
     cube = ixpePulseHeightCube('ccube', 'Count cube')
     tree.Project('ccube', expr, cut, '', num_events)
     cube.project_pha()

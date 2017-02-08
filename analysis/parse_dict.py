@@ -34,14 +34,14 @@ def fit_gain_trend(filepath, gem_label):
         degree = len(pol_coef)
         for i, p in enumerate(pol_coef):
             if i < degree - 1:
-                expr += '%f*(%s - %f)**%d + ' %\
+                expr += '%f*((%s - %f)/3600.)**%d + ' %\
                         (p, time_var, offset, degree - i - 1)
             else:
                 expr += '%f' % p
         expr = '(%s)/%f' % (expr, p) 
         return expr
 
-    offset = 1485500048.003290
+    offset = 1.48545e+09#1485500048.003290
     print time_trend_expr(pol_coef, offset)
     
     plt.plot(time, numpy.polyval(pol_coef, time))

@@ -75,8 +75,6 @@ def parse_and_plot2d(gem):
     #for gem in dictionary.keys():
     #for gem in ['gem_1420']:
     root_file_path = '%s_uniformities.root'%gem
-    gain_trend_file_path = '/data/xpe/xperecon/analysis/gemNov2016Summary/gaintrend_%s.data'%gem
-
         
     f = ROOT.TFile(root_file_path)
     fwhm_label = "FWHM_%s"%gem
@@ -99,8 +97,50 @@ def parse_and_plot2d(gem):
     c2.SaveAs("%s.png"%main_peak_label)
     #raw_input()
 
+def plot_gem_summary():
+    gem_list = ['gem_1413','gem_1414','gem_1415','gem_1416','gem_1417','gem_1418',
+                'gem_1419','gem_1420','gem_1421','gem_1422']
+    
+    cFWHM = ROOT.TCanvas("FWHM","FWHM",1400, 1050)
+    cFWHM.Divide(4,3)
 
+    cPeak = ROOT.TCanvas("Peak","Peak",1400, 1050)
+    cPeak.Divide(4,3)
+    
+    pool = []
+    for i,gem in enumerate(gem_list):
+        root_file_path = '%s_uniformities.root'%gem
+        f = ROOT.TFile(root_file_path)
+        fwhm_label = "FWHM_%s"%gem
+        main_peak_label = "MainPeak_%s"%gem
+        h = f.Get(fwhm_label)
+        g = f.Get(main_peak_label)
+        cFWHM.cd(i+1)
+
+        h.Draw('colz')
+        h.SetTitle(fwhm_label)
+        h.GetYaxis().SetTitle("fBaricenterY[0]")
+        h.GetXaxis().SetTitle("fBaricenterX[0]")
+        cFWHM.Update()
+        
+        cPeak.cd(i+1)
+        g.Draw('colz')
+        g.SetTitle(main_peak_label)
+        g.GetYaxis().SetTitle("fBaricenterY[0]")
+        g.GetXaxis().SetTitle("fBaricenterX[0]")
+        cPeak.Update()
+        
+        pool.append(h)
+        pool.append(g)
+        pool.append(f)
+        pool.append(fwhm_label)
+        pool.append(main_peak_label)
+    raw_input()
+
+    
 #for gem in ['gem_1419']:
-for gem in dictionary.keys():
-    parse_and_fit(gem, useExpression=True)
-    parse_and_plot2d(gem)
+#for gem in dictionary.keys():
+#    parse_and_fit(gem, useExpression=True)
+#    parse_and_plot2d(gem)
+
+plot_gem_summary()

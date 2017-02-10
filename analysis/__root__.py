@@ -44,7 +44,7 @@ CANVAS_BOTTOM_MARGIN = 0.130*TEXT_SIZE/TEXT_SIZE_SCALE
 
 ROOT.gROOT.SetStyle('Plain')
 STYLE = ROOT.gStyle
-STYLE.SetOptTitle(0)
+#STYLE.SetOptTitle(0)
 STYLE.SetOptStat(0000)
 
 # More setting

@@ -97,15 +97,66 @@ def parse_and_plot2d(gem):
     c2.SaveAs("%s.png"%main_peak_label)
     #raw_input()
 
-def plot_gem_summary():
+
+def plot_hist(array, gem,label,xmin,xmax):
+    from matplotlib import pyplot as plt
+    mean = numpy.mean(array)
+    rms = numpy.std(array)
+    plt.hist(array, bins=numpy.linspace(xmin,xmax,50))
+    plt.title("%s %s"%(label,gem))
+    #good for fwhm
+    #plt.axis([xmin,xmax,0.0, 57])
+    plt.axis([xmin,xmax,0.0, 45])
+    plt.xlabel("%s"%label)
+    plt.ylabel("Counts/bin")
+    plt.grid(True)
+    plt.text(4000,40, "Mean:%d rms:%d"%(mean,rms), fontsize=16)
+    #plt.text(0.25,40, "Mean:%.3f rms:%.3f"%(mean,rms), fontsize=16)
+    plt.savefig("%s_hist_%s.png"%(label,gem))
+    plt.show()
+
+
+def get_mean_rms(gem, fwhm_hist, main_peak_hist):
+    #Brutally copied from pha.py, needs to be done better!
+    num_side_bins=20
+    half_size=7.5
+    num_points=200
+
+    x_bins = numpy.linspace(-half_size, half_size, num_side_bins)
+    y_bins = numpy.linspace(-half_size, half_size, num_side_bins)
+
+    fwhm_bin_list = []
+    peak_bin_list = []
+    
+    for i,x in enumerate(x_bins):
+        for j,y in enumerate(y_bins):
+            bin_fwhm = fwhm_hist.GetBinContent(j+1,i+1)
+            fwhm_bin_list.append(bin_fwhm)
+            main_peak = main_peak_hist.GetBinContent(j+1,i+1)
+            peak_bin_list.append(main_peak)
+
+    fwhm_bin_array = numpy.array(fwhm_bin_list)
+    fwhm_mean = numpy.mean(fwhm_bin_array)
+    fwhm_rms = numpy.std(fwhm_bin_array)
+    
+    peak_bin_array = numpy.array(peak_bin_list)
+    peak_mean = numpy.mean(peak_bin_array)
+    peak_rms = numpy.std(peak_bin_array)
+            
+    #Good values for fwhm hist
+    #plot_hist(fwhm_bin_array,gem,label='EnergyRes',xmin=0.15,xmax=0.35)
+    #Good values for main peak hist
+    plot_hist(peak_bin_array,gem,label='MainPeak',xmin=3000,xmax=5500)
+    
+def plot_gem_summary(plot_hists=False):
     gem_list = ['gem_1413','gem_1414','gem_1415','gem_1416','gem_1417','gem_1418',
                 'gem_1419','gem_1420','gem_1421','gem_1422']
     
-    cFWHM = ROOT.TCanvas("FWHM","FWHM",1400, 1050)
-    cFWHM.Divide(4,3)
+    cFWHM = ROOT.TCanvas("FWHM","FWHM",1050, 1400)
+    cFWHM.Divide(3,4)
 
-    cPeak = ROOT.TCanvas("Peak","Peak",1400, 1050)
-    cPeak.Divide(4,3)
+    cPeak = ROOT.TCanvas("Peak","Peak",1050, 1400)
+    cPeak.Divide(3,4)
     
     pool = []
     for i,gem in enumerate(gem_list):
@@ -115,12 +166,16 @@ def plot_gem_summary():
         main_peak_label = "MainPeak_%s"%gem
         h = f.Get(fwhm_label)
         g = f.Get(main_peak_label)
+        if plot_hist:
+            get_mean_rms(gem,h,g)
         cFWHM.cd(i+1)
 
         h.Draw('colz')
         h.SetTitle(fwhm_label)
         h.GetYaxis().SetTitle("fBaricenterY[0]")
         h.GetXaxis().SetTitle("fBaricenterX[0]")
+        h.SetMinimum(0.15)
+        h.SetMaximum(0.35)
         cFWHM.Update()
         
         cPeak.cd(i+1)
@@ -128,6 +183,8 @@ def plot_gem_summary():
         g.SetTitle(main_peak_label)
         g.GetYaxis().SetTitle("fBaricenterY[0]")
         g.GetXaxis().SetTitle("fBaricenterX[0]")
+        g.SetMaximum(5500)
+        g.SetMinimum(3000)
         cPeak.Update()
         
         pool.append(h)
@@ -143,4 +200,4 @@ def plot_gem_summary():
 #    parse_and_fit(gem, useExpression=True)
 #    parse_and_plot2d(gem)
 
-plot_gem_summary()
+plot_gem_summary(True)

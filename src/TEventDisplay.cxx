@@ -1724,6 +1724,7 @@ void TEventDisplay::DrawHistos(){
       dist = TMath::Power(xh,2)/TMath::Power(R1EllipseCut,2)+TMath::Power(yh,2)/TMath::Power(R2EllipseCut,2);
       //Fill Histos applying selected cuts
       if (fMomY[ncl]){
+	//	if(events==0) cout << fStoN[ncl] << " -->TW " << fTrigWindow << " -->CluS " << fCluSize[ncl] << " -->PH " << fPHeight[ncl] << " --> NClus " << fNClusters << " -->Sh " << fMomX[ncl]/fMomY[ncl] << " -->circle " << TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<< " --> IY " << fImpactY[ncl] << " -->IX " << fImpactX[ncl] << " -->dist " << dist << endl;
 	if(AndFlag){
 	  if ((fStoN[ncl]>=StoNLoThresh)                &&  (fStoN[ncl]<=StoNHiThresh)               &&
 	      (fTrigWindow>=TrWinLoThresh               &&  fTrigWindow <=TrWinHiThresh)             &&    
@@ -1735,7 +1736,7 @@ void TEventDisplay::DrawHistos(){
 	       ((fMomThirdX[ncl] >= M3LoThresh)         &&  (fMomThirdX[ncl] <= M3HiThresh))) &&
 	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=CircleRadiusCut)   &&
 	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
-	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
+	       (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )
 	    {
 	      FillHistos(ncl);
@@ -1756,7 +1757,7 @@ void TEventDisplay::DrawHistos(){
 	      (((fMomX[ncl]/fMomY[ncl])>=ShapeLoThresh) && ((fMomX[ncl]/fMomY[ncl])<=ShapeHiThresh)  &&
 	       ((fMomThirdX[ncl] <= M3LoThresh)           || (fMomThirdX[ncl] >= M3HiThresh)))           &&
 	      (TMath::Sqrt((fBaricenterY[ncl]*fBaricenterY[ncl]) + (fBaricenterX[ncl]*fBaricenterX[ncl]))<=CircleRadiusCut)  &&
-	      (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
+	       (fImpactY[ncl]>=GeomYDownCut)  &&  (fImpactY[ncl]<=GeomYUpCut)          &&
 	      (fImpactX[ncl]>=GeomXLeftCut)    &&  (fImpactX[ncl]<=GeomXRightCut) && dist<1.0
 	      )				     
 	    {

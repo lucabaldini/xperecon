@@ -15,15 +15,16 @@ def fit_gauss(hist,nsigma=1.5, verbose=True):
     hist.Fit("g", "RQ")
     gPeak  = g.GetParameter(1)
     gSigma = g.GetParameter(2)
-    gFWHM  = G2FWHM*(gSigma/gPeak)
     gPeakErr = g.GetParError(1)
+    gFWHM  = G2FWHM*(gSigma/gPeak)
     gFWHMErr = gFWHM*numpy.sqrt((g.GetParError(2)/gSigma)**2 + (gPeakErr/gPeak)**2)
     
+    
     if verbose:
-        print  "fitSimpleGauss:", gPeak, gSigma, "Eres=", gSigma/gPeak, \
-            "FWHM", gFWHM
+        print  "fitSimpleGauss:", gPeak, gSigma, "FWHM", gFWHM, \
+            "Eres=", gSigma/gPeak,'\n'            
         
-    return (gPeak, gFWHM, gPeakErr, gFWHMErr)
+    return (gPeak, gFWHM, gPeakErr, gFWHMErr,gSigma)
     
 
 
@@ -79,15 +80,18 @@ class ixpePulseHeightCube(ROOT.TH3D):
         """
         fwhm_hist = self.create_2d_hist('FWHM_%s'%self.label)
         main_peak_hist = self.create_2d_hist('MainPeak_%s'%self.label)
+        main_peak_sigma_hist = self.create_2d_hist('MainPeakSigma_%s'%self.label)
         
         for i in range(self.GetNbinsX()):
             for j in range(self.GetNbinsY()):
                 h = self.create_pha_histogram(i, j)
                 if fit:
-                    peak, fwhm, peak_err, fwhm_err = fit_gauss(h, verbose=False)
+                    peak, fwhm, peak_err, fwhm_err, sigma = fit_gauss(h, verbose=False)
                     fwhm_hist.SetBinContent(i+1,j+1, fwhm)
                     main_peak_hist.SetBinContent(i+1,j+1, peak)
+                    main_peak_sigma_hist.SetBinContent(i+1,j+1, sigma)
         self.__histogram_dict['MainPeak'] = main_peak_hist
+        self.__histogram_dict['MainPeakSigma'] = main_peak_sigma_hist
         self.__histogram_dict['FWHM'] = fwhm_hist
      
 

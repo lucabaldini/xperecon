@@ -31,7 +31,7 @@ def make_maps(run, label):
     parse_and_plot2d(_label)
 
 
-def run_trending(file_path_list,cut,label):
+def run_trending(file_path_list,cut,label,tbining=None):
     file_str = ""
     for file_path in file_path_list:
         file_str+=" %s"%file_path
@@ -40,7 +40,10 @@ def run_trending(file_path_list,cut,label):
         return output_file_path
 
     else:
-        cmd = 'python plotGainTrend.py %s -l %s -t 5 -c "%s" -o -s'%(file_str, label, cut)
+        if tbining is not None:
+            cmd = 'python plotGainTrend.py %s -l %s -t %s -c "%s" -o -s'%(file_str, label, tbining, cut)
+        else:
+            cmd = 'python plotGainTrend.py %s -l %s -c "%s" -o -s'%(file_str, label, cut)
         
         os.system(cmd)
     
@@ -343,26 +346,19 @@ center_region_cut = "fBaricenterX[0]>=-2&&fBaricenterX[0]<=2&&fBaricenterY[0]>=-
 variable_gain_region_cut = "fBaricenterX[0]>=-6&&fBaricenterX[0]<=-3&&fBaricenterY[0]>=-6&&fBaricenterY[0]<=-3"
 
 label = 'run929_975_tbin5'
+tbining = 5
 
-g_region_filepath = run_trending(file_path_list,good_region_cut,'gpd20_small_good_region_%s'%label)
+g_region_filepath = run_trending(file_path_list,good_region_cut,'gpd20_small_good_region_%s'%label,tbining=tbining)
 
-b_region_filepath = run_trending(file_path_list,bad_region_cut,'gpd20_small_bad_region_%s'%label)
+b_region_filepath = run_trending(file_path_list,bad_region_cut,'gpd20_small_bad_region_%s'%label,tbining=tbining)
 
 
-vg_region_filepath = run_trending(file_path_list,variable_gain_region_cut,'gpd20_small_variable_gain_region_%s'%label)
+vg_region_filepath = run_trending(file_path_list,variable_gain_region_cut,'gpd20_small_variable_gain_region_%s'%label,tbining=tbining)
 
-center_region_filepath = run_trending(file_path_list,center_region_cut,'gpd20_small_center_region_%s'%label)
-
-#b_region_filepath = "gaintrend_gpd20_small_bad_region_full_stats.data"
-#g_region_filepath = "gaintrend_gpd20_small_good_region_full_stats.data"
-
-#center_region_filepath = "gaintrend_gpd20_small_center_region_full_stats.data"
-
-#g_region_filepath = "gaintrend_gpd20_small_good_region_full_stats.data"
-
-#vg_region_filepath = "gaintrend_gpd20_small_variable_gain_region_full_stats.data"
+center_region_filepath = run_trending(file_path_list,center_region_cut,'gpd20_small_center_region_%s'%label,tbining=tbining)
 
 plot_trending_by_zone(g_region_filepath, b_region_filepath, vg_region_filepath,center_region_filepath)
 
-#plot_gem_summary(True)
+
+
 

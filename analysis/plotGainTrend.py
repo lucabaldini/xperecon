@@ -49,7 +49,7 @@ TimeBin  = args.timebin #hours
 SavePlot = args.saveplot
 SaveOutput = args.saveout
 nsigfit  = 1.5
-CUT      = '(%s)' %args.cut
+CUT      = '(%s)' %args.cut # fCluSize[0]>10 fPHeight[0]>250
 minEvtInHist = 500
 
 
@@ -57,8 +57,12 @@ minEvtInHist = 500
 ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetPadGridX(True)
 ROOT.gStyle.SetPadGridY(True)
-
-
+ROOT.gStyle.SetPadLeftMargin(0.05)
+ROOT.gStyle.SetPadRightMargin(0.001)
+ROOT.gStyle.SetTitleYOffset(0.5)
+ROOT.gStyle.SetTitleYSize(0.05)
+ROOT.gStyle.SetTitleXSize(0.05)
+ROOT.gStyle.SetLabelSize(0.05, "XY")
 
 tt = ROOT.TChain('tree')
 for f in args.infile:
@@ -93,6 +97,8 @@ gainVal  = []
 gainErr  = []
 resVal   = []
 resErr   = []
+rateVal  = []
+rateErr  = []
 chbins   = np.linspace(0,10000,201)
 
 # project entire tree in a 2D histo
@@ -115,7 +121,8 @@ for i in xrange(Nbins):
     # get projection in time (y coord in hAll)
     htmp = hAll.ProjectionX("htmp", i+1,i+1)
     htmp.Draw()
-    if htmp.GetEntries() >= minEvtInHist:
+    htmpEntries = htmp.GetEntries()
+    if htmpEntries >= minEvtInHist:
         #print '---> ', htmpnp.GetEntries(), htmp.GetEntries(),\
         #    htmp.GetEntries()/htmpnp.GetEntries()
 
@@ -128,7 +135,8 @@ for i in xrange(Nbins):
         gainErr.append(gPeakErr)
         resVal.append(gFWHM)
         resErr.append(gFWHMErr)
-
+        rateVal.append(htmpEntries/(2*3600*timeErr[i]))
+        rateErr.append(np.sqrt(htmpEntries)/(2*3600*timeErr[i]))
     ROOT.gPad.Update()
     ctmp.Print(allHistoFileName);
 
@@ -143,14 +151,17 @@ gainVal  = np.array(gainVal)
 gainErr  = np.array(gainErr)
 resVal   = np.array(resVal)
 resErr   = np.array(resErr)
+rateVal  = np.array(rateVal)
+rateErr  = np.array(rateErr)
 N        = len(timeX)
 
 cTrend = ROOT.TCanvas("gaintrend_%s" %Label,\
                       "gaintrend_%s" %Label, 1000, 700)
-cTrend.Divide(1,2)
+cTrend.Divide(1,3)
 cTrend.cd(1)
 gGain = ROOT.TGraphErrors(N, timeX*3600, gainVal, timeXErr*3600, gainErr)
 gGain.SetMarkerStyle(20)
+gGain.SetMarkerSize(0.7)
 gGain.SetTitle("Gain (gaussian peak) @ 5.9 keV (%s)" % Label)
 gGain.GetYaxis().SetTitle("Peak")
 gGain.GetXaxis().SetTitle("")
@@ -158,6 +169,7 @@ gGain.GetXaxis().SetTimeDisplay(1);
 gGain.GetXaxis().SetTimeFormat("#splitline{%d/%m/%y}{%H:%M:%S}");
 gGain.GetXaxis().SetTimeOffset(TimeOffset)
 gGain.GetXaxis().SetLabelOffset(0.03)
+gGain.GetXaxis().SetNdivisions(520)
 gGain.Draw("ap")
 ROOT.gPad.Update()
 try:
@@ -171,6 +183,7 @@ except:
 cTrend.cd(2)
 gRes = ROOT.TGraphErrors(N, timeX, resVal, timeXErr, resErr)
 gRes.SetMarkerStyle(20)
+gRes.SetMarkerSize(0.7)
 gRes.SetTitle("Resolution (gaussian sigma FWHM) @ 5.9 keV (%s)" % Label)
 gRes.GetXaxis().SetTitle("Elapsed Time (hours)")
 gRes.GetYaxis().SetTitle("#Delta E/E (%)")
@@ -184,7 +197,19 @@ try:
     psRes.SetY2NDC(0.80);
 except:
     pass
+
+cTrend.cd(3)
+gRate = ROOT.TGraphErrors(N, timeX, rateVal, timeXErr, rateErr)
+gRate.SetMarkerStyle(20)
+gRate.SetMarkerSize(0.7)
+gRate.SetTitle("Rate after cut {%s}" % CUT)
+gRate.GetXaxis().SetTitle("Elapsed Time (hours)")
+gRate.GetYaxis().SetTitle("Rate (Hz)")
+gRate.Draw("ap")
+ROOT.gPad.Update()
 cTrend.Update()
+
+
 
 if SavePlot:
     cTrend.SaveAs("%s.png" % cTrend.GetName())
@@ -197,10 +222,10 @@ if SaveOutput:
     outFile.write("# Gain and resolution for %s \n" %Label)
     outFile.write("# Written on %s\n" % time.ctime())
     outFile.write("# Time offset (hr) = %f\n" % TimeOffset)
-    outFile.write("# time (hr)\tpeak\tfwhm\ttimeErr\tpeakErr\tfwhmErr\n")
+    outFile.write("# time (hr)\tpeak\tfwhm\trate\ttimeErr\tpeakErr\tfwhmErr\trateEr\n")
     for i in xrange(N):
-        outFile.write("%g\t%g\t%g\t%g\t%g\t%g\n" %\
-                      (timeX[i], gainVal[i], resVal[i],
-                       timeXErr[i], gainErr[i], resErr[i]))
+        outFile.write("%g\t%g\t%g\t%g\t%g\t%g\t%g\t%g\n" %\
+                      (timeX[i], gainVal[i], resVal[i], rateVal[i],
+                       timeXErr[i], gainErr[i], resErr[i], rateErr[i]))
     
     outFile.close()

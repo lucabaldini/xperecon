@@ -23,7 +23,7 @@ def parse_and_fit(gem, useExpression=False):
     os.system(cmd)
 
 def make_maps(run, label):
-    file_path = '/data/xpe/xperecon/out/001_0000%s_data_TH5_outputfile.root'%run
+
     _label = '%s_run%s'%(label,run)
     output_file_path = '/data/xpe/xperecon/analysis/%s_uniformities.root'%(_label)
     cmd = 'python plotGEMUniformMap.py %s -o %s -l %s '%(file_path, output_file_path, _label)
@@ -31,30 +31,67 @@ def make_maps(run, label):
     parse_and_plot2d(_label)
 
 
-def plot_trending_by_zone(g_file_path,b_file_path):
+def run_trending(file_path_list,cut,label,tbining=None):
+    file_str = ""
+    for file_path in file_path_list:
+        file_str+=" %s"%file_path
+    output_file_path = 'gaintrend_%s.data'%label
+    if os.path.exists(output_file_path):
+        return output_file_path
+
+    else:
+        if tbining is not None:
+            cmd = 'python plotGainTrend.py %s -l %s -t %s -c "%s" -o -s'%(file_str, label, tbining, cut)
+        else:
+            cmd = 'python plotGainTrend.py %s -l %s -c "%s" -o -s'%(file_str, label, cut)
+        
+        os.system(cmd)
+    
+    return output_file_path
+    
+def plot_trending_by_zone(g_file_path,b_file_path,vg_file_path,center_file_path):
     time, g_peak, g_fwhm, g_timeErr, g_peakErr, g_fwhmErr = \
                         numpy.loadtxt(g_file_path, delimiter='\t', unpack=True)
 
     time, b_peak, b_fwhm, b_timeErr, b_peakErr, b_fwhmErr = \
                         numpy.loadtxt(b_file_path, delimiter='\t', unpack=True)
 
+    time, vg_peak, vg_fwhm, vg_timeErr, vg_peakErr, vg_fwhmErr = \
+                numpy.loadtxt(vg_file_path, delimiter='\t', unpack=True)
+
+    time, c_peak, c_fwhm, c_timeErr, c_peakErr, c_fwhmErr = \
+                    numpy.loadtxt(center_file_path, delimiter='\t', unpack=True)
+
     
     from matplotlib import pyplot as plt
     import matplotlib
     matplotlib.rcParams.update({'font.size': 18})
     fig = plt.figure(figsize=(15,10),facecolor='w')
+    tstart = 20
+    
     plt.errorbar(time,g_fwhm, xerr=0, yerr=g_fwhmErr, label='Good region', marker='o',ls='none')
-    g_pol_coef = numpy.polyfit(time[time>60], g_fwhm[time>60], deg=1)
-    plt.plot(time[time>60], numpy.polyval(g_pol_coef, time[time>60]),lw=2,color='b')
-    plt.text(40, 0.4, 'y = %sx + %s'%(g_pol_coef[0],g_pol_coef[1]),fontsize=18, color='b')
+    g_pol_coef = numpy.polyfit(time[time>tstart], g_fwhm[time>tstart], deg=1)
+    plt.plot(time[time>tstart], numpy.polyval(g_pol_coef, time[time>tstart]),lw=2,color='b')
+    plt.text(32, 0.35, 'y = %sx + %s'%(g_pol_coef[0],g_pol_coef[1]),fontsize=18, color='b')
     
     plt.errorbar(time,b_fwhm, xerr=0, yerr=b_fwhmErr, label='Bad region',color='r', marker='o',ls='none')
-    b_pol_coef = numpy.polyfit(time[time>60], b_fwhm[time>60], deg=1)
-    plt.plot(time[time>60], numpy.polyval(b_pol_coef, time[time>60]),lw=2,color='r')
-    plt.text(40, 0.35, 'y = %sx + %s'%(b_pol_coef[0],b_pol_coef[1]),fontsize=18, color='red')
+    b_pol_coef = numpy.polyfit(time[time>tstart], b_fwhm[time>tstart], deg=1)
+    plt.plot(time[time>tstart], numpy.polyval(b_pol_coef, time[time>tstart]),lw=2,color='r')
+    plt.text(32, 0.32, 'y = %sx + %s'%(b_pol_coef[0],b_pol_coef[1]),fontsize=18, color='red')
+
+    plt.errorbar(time,c_fwhm, xerr=0, yerr=c_fwhmErr, label='Center region',color='black', marker='o',ls='none')
+    c_pol_coef = numpy.polyfit(time[time>tstart], c_fwhm[time>tstart], deg=1)
+    plt.plot(time[time>tstart], numpy.polyval(c_pol_coef, time[time>tstart]),lw=2,color='black')
+    plt.text(32, 0.37, 'y = %sx + %s'%(c_pol_coef[0],c_pol_coef[1]),fontsize=18, color='black')
+
+    plt.errorbar(time,vg_fwhm, xerr=0, yerr=vg_fwhmErr, label='Variable Gain region',color='g', marker='o',ls='none')
+    vg_pol_coef = numpy.polyfit(time[time>tstart], vg_fwhm[time>tstart], deg=1)
+    plt.plot(time[time>tstart], numpy.polyval(vg_pol_coef, time[time>tstart]),lw=2,color='g')
+    plt.text(32, 0.29, 'y = %sx + %s'%(vg_pol_coef[0],vg_pol_coef[1]),fontsize=18, color='green')
     
     plt.xlabel('Time [hr]')
     plt.ylabel('DeltaE/E (%)')
+    plt.ylim(0.15,0.40)
     plt.grid()
 
     plt.legend()
@@ -88,7 +125,6 @@ def fit_gain_trend(filepath, gem_label):
         expr = '(%s)/%f' % (expr, p) 
         return expr
 
-    #offset = 1.48550e+09 #offset for gem 1422#1.48596e+09 Offset for gem 1422 
     expr =  time_trend_expr(pol_coef, offset)
     print expr
     
@@ -131,6 +167,11 @@ def get_stats(hist):
 def parse_and_plot2d(label):
     #for gem in dictionary.keys():
     #for gem in ['gem_1420']:
+    """This script will make a two panel plot with the energy resolution and main peak position 
+    for a given detector. The detector is identified via the label which you pass, the file
+    which will be used is the output from plotGEMUniformMap (i.e. root file with the fits for
+    each baricenter bin)
+    """
     root_file_path = '%s_uniformities.root'%label
 
     canvas = ROOT.TCanvas("%s"%label,"%s"%label,1200,700)
@@ -139,20 +180,17 @@ def parse_and_plot2d(label):
     f = ROOT.TFile(root_file_path)
     fwhm_label = "FWHM_%s"%label
     main_peak_label = "MainPeak_%s"%label
-    #c1 = ROOT.TCanvas(fwhm_label)
+
     fwhm = f.Get(fwhm_label)
     min_val, max_val,mean_val,rms_val = get_stats(fwhm)
     fwhm_title = "%s FWHM %.3f-%.3f <%.3f> rms:%.3f"%(label,min_val, max_val,mean_val,rms_val)
     fwhm.SetTitle(fwhm_title)
     fwhm.GetYaxis().SetTitle("fBaricenterY[0]")
     fwhm.GetXaxis().SetTitle("fBaricenterX[0]")
-    #fwhm.SetMaximum(0.28)
-    #fwhm.SetMinimum(0.17)
+    
     fwhm.Draw("colz")
     canvas.Update()
-    #c1.SaveAs("%s.png"%fwhm_label)
-    #raw_input()
-    #c2 = ROOT.TCanvas(main_peak_label)
+    
     canvas.cd(2)
     peak = f.Get(main_peak_label)
     p_min_val, p_max_val,p_mean_val,p_rms_val = get_stats(peak)
@@ -161,12 +199,15 @@ def parse_and_plot2d(label):
     peak.GetYaxis().SetTitle("fBaricenterY[0]")
     peak.GetXaxis().SetTitle("fBaricenterX[0]")
     peak.Draw("colz")
-    #c2.SaveAs("%s.png"%main_peak_label)
+    
     canvas.SaveAs("%s_maps.png"%label)
-    #raw_input()
+    
 
 
 def plot_hist(array, gem,label,xmin,xmax):
+    """This method takes the list of mean and rms values from the uniform maps and
+    plots the histograms. 
+    """
     from matplotlib import pyplot as plt
     mean = numpy.mean(array)
     rms = numpy.std(array)
@@ -217,6 +258,9 @@ def get_mean_rms(gem, fwhm_hist, main_peak_hist):
     plot_hist(peak_bin_array,gem,label='MainPeak',xmin=3000,xmax=5500)
     
 def plot_gem_summary(plot_hists=False):
+    """This method is only useful for generating a 3x4 canvas with the uniformity maps of the
+    10 GEMs we tested. 
+    """
     gem_list = ['gem_1413','gem_1414','gem_1415','gem_1416','gem_1417','gem_1418',
                 'gem_1419','gem_1420','gem_1421','gem_1422']
     
@@ -287,15 +331,34 @@ gem = 'gpd20_run59'
 
 
 #label = 'gpd20'
-#run_list = [923,924,925,926,927,928,929,930,931,958,959]
-#for run in run_list:
- #   make_maps(run,label)
+#run_list = [923,924,925,926,927,928,929,930,931,958,959,960,961,962,963,964,965,966,972,973]
+run_list = [929,930,931,958,959,960,961,962,963,964,965,966,972,973,974,975]
+file_path_list = []
+for run in run_list:
+    root_file_path = '/data/xpe/xperecon/out/001_0000%s_data_TH5_outputfile.root'%run
+    file_path_list.append(root_file_path)
+    
+    #make_maps(run,label)
+    
+good_region_cut = "fBaricenterX[0]>=2&&fBaricenterX[0]<=5&&fBaricenterY[0]>=-6&&fBaricenterY[0]<=-3"
+bad_region_cut = "fBaricenterX[0]>=2&&fBaricenterX[0]<=5&&fBaricenterY[0]>=3&&fBaricenterY[0]<=6"
+center_region_cut = "fBaricenterX[0]>=-2&&fBaricenterX[0]<=2&&fBaricenterY[0]>=-2&&fBaricenterY[0]<=2"
+variable_gain_region_cut = "fBaricenterX[0]>=-6&&fBaricenterX[0]<=-3&&fBaricenterY[0]>=-6&&fBaricenterY[0]<=-3"
+
+label = 'run929_975_tbin5'
+tbining = 5
+
+g_region_filepath = run_trending(file_path_list,good_region_cut,'gpd20_small_good_region_%s'%label,tbining=tbining)
+
+b_region_filepath = run_trending(file_path_list,bad_region_cut,'gpd20_small_bad_region_%s'%label,tbining=tbining)
 
 
-b_region_filepath = "gaintrend_gpd20_small_bad_region.data"
-g_region_filepath = "gaintrend_gpd20_small_good_region2.data"
+vg_region_filepath = run_trending(file_path_list,variable_gain_region_cut,'gpd20_small_variable_gain_region_%s'%label,tbining=tbining)
 
-plot_trending_by_zone(g_region_filepath, b_region_filepath)
+center_region_filepath = run_trending(file_path_list,center_region_cut,'gpd20_small_center_region_%s'%label,tbining=tbining)
 
-#plot_gem_summary(True)
+plot_trending_by_zone(g_region_filepath, b_region_filepath, vg_region_filepath,center_region_filepath)
+
+
+
 

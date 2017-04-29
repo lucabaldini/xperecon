@@ -287,14 +287,16 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	  timer2.Start(kTRUE);
 
 	  while(!Polarimeter->fRawFile->fStream.eof()){
-	    if (stopEv && nTotEvents == stopEv+1) break;
+	    if (stopEv && nTotEvents == stopEv+1) {break;}
 	    nClusEvents++;
 	    nTotEvents++;
 	    eofdata =  Polarimeter->ReadROInew(nTotEvents);
 	     
 	    if(eofdata == 1) {
-	      if (VLEVEL >= 0)
-		cout << "[" << progName << " - MESSAGE] Events: " << nTotEvents << "  end of file!!" << endl;
+	      if (VLEVEL >= 0) {
+		cout << "[" << progName << " - MESSAGE] Events: " << nTotEvents-- << "  end of file!!" << endl;
+                cout << "[" << progName << " - MESSAGE] Events: " << nClusEvents-- << "  events with clusters" << endl;
+              }
 	      break;
 	    }
 	    if(eofdata==2){
@@ -316,13 +318,18 @@ void TEventAnalysis::DataAnalysis(Int_t VLEVEL, Int_t startEv, Int_t stopEv)
 	    if (!NbClusters)
 	      {
 		//cout << "nClusEvents:  " << nClusEvents << "   NClusters:  " << NbClusters << " ---> NO CLUSTER FOUND in tot ev " << nTotEvents <<  endl;
+                // CS here a "SaveCluster" equivalent method
+                // to save event even if no cluster is found:
+                // keep the out file in sync with input
+                // ...
+                SaveClusters(0, nTotEvents);
 		nClusEvents--;  
 		continue;
 	      }
 	    else {
 	      //cout << " OK nClusEvents: " << nClusEvents << " toteV " << nTotEvents << endl;
 	      if (RTFlag && NbClusters==1) SaveEventsTree(NbClusters,nClusEvents);
-	      if (NbClusters>=1) SaveClusters(NbClusters,nClusEvents);
+	      if (NbClusters>=1) SaveClusters(NbClusters,nTotEvents);
 	    }
 	  }// end while
 	  
@@ -431,19 +438,27 @@ void TEventAnalysis::InitializeEventsTree(){
 
 
 void TEventAnalysis::SaveClusters(Int_t NbClusters, Int_t nClusEvents){
-  fEventId   = nClusEvents;
+  fEventId   = nClusEvents -1; // cs event Id starting from 0
   fNClusters = NbClusters;
   fTrigWindow = Polarimeter->numPix;
   fTimeTick   = Polarimeter->timetick;
   fTimeStamp  = Polarimeter->timestamp;
   fbufferId   = Polarimeter->bufferID;
+  for(int k=0;k<4;k++) ROI[k] = Polarimeter->Roi[k]; //read window bounder
+  // cs if no cluster, just exit.
+  // Notice that all arrays have length fNCluster and are empty in this case:
+  // must be handled properly when reading the file
+  if (NbClusters == 0){
+    DataAnalizedFile->cd();
+    fTree->Fill();
+    return;
+  }
   // sort by fPulseHeight, highest first, as defined in  sort_by_ph2
   if (NbClusters>1)
     {
       sort(Polarimeter->fAllClusts, Polarimeter->fAllClusts + NbClusters, sort_by_ph2);
     }
   for (Int_t i=0; i<NbClusters; i++){
-    for(int k=0;k<4;k++) ROI[k] = Polarimeter->Roi[k]; //read window bounder 
     fPHeight[i]            = Polarimeter->fAllClusts[i]->fPulseHeight;
     fStoN [i]              = Polarimeter->fAllClusts[i]->fSignalToNoise;
     fTotNoise[i]           = Polarimeter->fAllClusts[i]->fTotalNoise;
